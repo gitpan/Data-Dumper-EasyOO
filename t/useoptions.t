@@ -1,14 +1,15 @@
 #!perl
 # test use-time print-style control
 
+use vars qw($ezfoo $ezbar);
+
 package Foo;
 use Data::Dumper::EasyOO ( indent => 1 );
-our $ezfoo = Data::Dumper::EasyOO->new;
+$main::ezfoo = Data::Dumper::EasyOO->new;
 
 package Bar;
 use Data::Dumper::EasyOO ( indent => 2 );
-our $ezbar = Data::Dumper::EasyOO->new;
-
+$main::ezbar = Data::Dumper::EasyOO->new;
 
 package main;
 use Test::More tests => 4;

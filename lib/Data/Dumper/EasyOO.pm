@@ -6,7 +6,7 @@ use Carp 'carp';
 
 use 5.005_03;
 use vars qw($VERSION);
-$VERSION = 0.03_01;
+$VERSION = 0.03;
 
 ##############
 my %cliPrefs;	# stores style preferences for each client package
@@ -35,14 +35,12 @@ my @okPrefs = qw( autoprint );
 ##############
 sub import {
     # save EzDD client's preferences for use in new()
-    my ($pkg, @args) = @_;
-    $DB::single=1;
-    my %args = @args;
-    #for my $prop (keys %args) {
-    for my $prop (@args) {
-	$val = shift @args;
+    my ($pkg, %args) = @_;
+
+    for my $prop (keys %args) {
 	if ($prop eq 'init') {
-	    carp "already initialized" if defined $$val;#args{$prop};
+	    carp "wont construct a new EzDD object into non-undef variable"
+		if defined ${$args{$prop}};
 	    my $foo = delete $args{$prop};
 	    $$foo = Data::Dumper::EasyOO->new(%args);
 	    next;
@@ -144,10 +142,10 @@ sub new {
 	# return dump-str unless void context
 	return $ddo->Dump() if defined wantarray;
 
-	no warnings 'uninitialized';
-	my $auto = $ddo->{autoprint};
+	my $auto = (defined $ddo->{autoprint}) ? $ddo->{autoprint} : '';
+
 	carp "called in void context, without autoprint set"
-	    and return unless defined $auto;
+	    and return unless $auto;
 	    
 	# autoprint to STDOUT, STDERR, or HANDLE (IO or GLOB)
 
@@ -157,16 +155,26 @@ sub new {
 	elsif ($auto == 2) {
 	    print STDERR $ddo->Dump();
 	}
-	elsif (ref $auto and $auto->isa('IO') || $auto->isa('GLOB')) {
+	elsif (ref $auto eq 'GLOB' or ref($auto) =~ /^IO/) {
 	    print $auto $ddo->Dump();
 	}
 	else { 
 	    carp "dunno whatis $ddo->{autoprint}";
 	}
 	return;
-
     };
-    return bless $code, $cls;
+
+    # copy constructor
+    bless $code, ref $cls || $cls;
+
+    if (ref $cls) {
+	# clone its settings
+	my $ddo = $cls->('__SA__');
+	my %styles;
+	@styles{@styleopts,@okPrefs} = @$ddo{@styleopts,@okPrefs};
+	$code->Set(%styles,%cfg);
+    }
+    return $code;
 }
 
 sub pp {
@@ -243,7 +251,7 @@ In the following, I compare EzDD to either or both DD and DD-OO.  This
 section is meant to be somewhat cursory; the next section delves a bit
 deeper.
 
-=head2 construct the EzDD object
+=head2 construct the EzDD object (overhead)
 
 To use EzDD, you have to (blow a line of code to) create an EzDD
 object, but you can initialize it once and for all, with less typing
@@ -254,6 +262,8 @@ than with DDs package vars.
 	$Data::Dumper::Indent = 1;
 	$Data::Dumper::Sortkeys = 1;
     }
+
+You can reduce this 'overhead' too; see L<FEATURES/Auto-Construction>
 
 =head2 EzDD printing is brief
 
@@ -368,10 +378,27 @@ Autoprinting allows you to drop the 'print':
 
 The autoprint property can be 1 for STDOUT, 2 for STDERR, or an open
 FileHandle, and will write accordingly.  You can also change this
-afterwards (note the tag change);
+afterwards.
 
-    my $ez2 = EzDD->new(_ezdd_autoprint => 2);	# set in ctor
-    $ez->Set(_ezdd_autoprint => 2);		# change during use
+    my $ez2 = EzDD->new(autoprint => 2);	# set in ctor
+    $ez->Set(autoprint => 2);			# change during use
+
+=head2 Auto-Construction
+
+    use Data::Dumper::EasyOO ( %styles, init => \our $foo );
+    $foo->( included_modules => \%INC );
+
+You can get a pre-built object by passing 'init', and a reference to a
+variable in which you want the EzDD object.  The object is constructed
+for you, and initialized with the style options you supply.
+
+=head2 Copy-Construction
+
+You can also clone an existing EzDD object, and optionally alter its
+(the new object) style-options.
+
+    my $newEzDD = $EzDD->new(%newStyleOverrides);
+
 
 =head2 Speed 
 
@@ -416,21 +443,7 @@ directly, and also provides (via special data value - slightly
 hackish) access to the underlying DD object for the other methods;
 Set() and AUTOLOAD().
 
-=head1 BUGS
-
-EasyOO relys on Data::Dumper, so if youre using 5.00503 and havent
-upgraded DD, some print-style controls wont be available.  
-
-Validation of DD methods is based on checks of $DD::VERSION, and may
-have a few errors, or may miss a few DD versions in between original
-and current.
-
-Some allowed methods may be nonsense in this context; I havent used
-them all myself in real-life, or in tests.
-
-Theres no accessor functionality for print-styles.
-
-=head1 Possible Applications
+=head1 POSSIBLE APPLICATIONS
 
 A client-class dumper.  You can create one or a few EzDD objects in
 your Foo.pm module, and tailor them to serialize Foo objects however
@@ -438,6 +451,20 @@ you like.  With B<Sortkeys>, you can serialize only the object keys
 you want, for persistent storage, or for debugging purposes.
 Maxdepth, Varname, etc are all similarly usable.
 
+
+=head1 BUGS
+
+EasyOO relys on Data::Dumper, so if youre using 5.00503 and havent
+upgraded DD, some print-style controls wont be available.  
+
+Validation of DD methods is based on checks of $DD::VERSION, and may
+have a few errors, or may miss a few DD versions between original and
+current.
+
+Some allowed methods may be nonsense in this context; I havent used
+them all myself in real-life, or in tests.
+
+Theres no accessor functionality for print-styles.
 
 =head1 CAVEATS, Enhancements, TBD, TBC
 
@@ -452,44 +479,42 @@ $ezdd->dump() instead.
 =item Brand new code, with the usual caveats.
 
 Tested OK against 5.005_03, 5.8.2, and many in between, both threaded
-and unthreaded.  As wise men say, 'release early, release often'
+and unthreaded.
 
 =item Too much dependency on DD
 
 The down-side of 5.00503 compatibility is that DD was less capable
-back then.  Barbie caught and reported some test failures on
-ActiveState 5.6.1 due to then non-existent DD methods used in some
-aggressive tests.  Ive detuned t/chains.t, but others may lurk.
+back then.  Some have been reported and fixed, but others may lurk.
 
 =item No validation on %printOptions values.
 
-Arrayrefs & hashrefs are passed verbatim to DD object.  If DD expects
-a particular value type, you must provide it; I do no checking, and
-rely on DD to complain as fitting.
+If DD expects a particular value type, you must provide it; I do no
+checking, and rely on DD to complain as fitting.
 
-If DD carps about stuff passed in, it may blame EzDD.  I regard this
-as a user error, youve been warned.  I will accept patches which
-place blame properly ;-)
+If DD carps about stuff passed in, it may blame EzDD, as it will
+probably use carp(), and EzDD is the using package.  I regard this as
+a user error, youve been warned.  I will accept patches which place
+blame properly ;-)
 
 =item format control not per-use, but on object only
 
 You cant localize print options for 1 usage.  This is because those DD
-pkg vars, localized or not, are copied into the object when its
+pkg vars, localized or not, are copied into the DD object when its
 constructed, and are thereafter ignored by that object.  This *could*
 be fixed by changes to DD, but I dont see the value, Id anticipate a
 slowdown, and I dont expect DDs maintainer would accept that.
 
 =item auto-labelling may be overzealous.
 
-In particular, $ezdd->(1,2,3,4) will treat 1,3 as labels.
-At minimum it needs more tests.
+In particular, C<< $ezdd->(1,2,3,4) >> will treat 1,3 as labels.
+You can prevent this by doing C<< $ezdd->([1,2,3,4]) >> instead.
 
 =item Reporting of illegal methods can change capitalization
 
-DD has nice property that object attributes are lower-cased versions
-of the method names.  I leverage this, and use lc(), ucfirst() to
-allow mixed case print-styles, but this may result in slightly
-confusing capitalization differences.
+Modulo lc() and ucfirst() differences, all DD style method-names are
+reflected in DD object attributes.  This makes it handy to be cavalier
+wrt method vs attribute vs package-var, but this can be slightly
+confusing wrt reporting of usage errors.
 
 =item not *entirely* data-agnostic
 
@@ -501,7 +526,7 @@ to the DD object, unless Ive missed something.
 
 EzDD uses $ddo->Reset so that $ddo can be reused.  a no_reset option
 would allow you to defeat that.  The internal flag 'ddez_noreset'
-already exists, but the details are subject to change.
+already exists, but is incomplete; the details are subject to change.
 
 =back
 
@@ -528,11 +553,17 @@ Reasons not to bother: The key would need som XPath-ish form, which
 may be sufficient reason to kill the idea at birth.  It would also
 need DD support, at very least a callback scheme.
 
+=item blessed alias
+
+I find it unfortunate that bless takes class-name as 2nd arg; its
+tedious to scroll to the bottom of a large object just to know its
+type.  I may someday add an alias to reverse them..
+
 =back
 
 =head2 Comments welcome.
 
-    Whats overkill ?
+Whats overkill ?  Certainly some of this.
 
 =head1 SEE ALSO
 
@@ -567,8 +598,3 @@ little give-back.  And besides, perl is fun, like an always-new toy.
 
 =cut
 
-
-	if ($auto == 0) {
-	    # print anyway - hack for benchmarking..
-	    print STDOUT $ddo->Dump();
-	}

@@ -1,9 +1,11 @@
 #!perl
 
-use Test::More (tests => 3);
+use Test::More; # (tests => 3);
 use Benchmark();
-use File::Spec;
-use File::Temp 'tempfile';
+
+eval "use File::Spec; use File::Temp 'tempfile'";
+plan skip_all => "need File::Spec and File::Temp" if $@;
+plan tests => 3;
 
 use vars qw($AR $HR @Arrays);
 require "t/TestLabelled.pm";
@@ -47,11 +49,13 @@ SKIP: {
     }, "ezdd faster");
 }
 
+unless ($ENV{TEST_VERBOSE}) {
+    unlink <bench*.dat>;
+    exit;
+}
 
 ################################
 # extra 'tests', which report results, but cant fail
-
-exit unless $ENV{TEST_VERBOSE};
 
 diag " running old 'tests'";
 

@@ -5,8 +5,9 @@ use Test::More tests => 8;
 require 't/Testdata.pm';
 
 use Data::Dumper::EasyOO;
-our $ezfoo = Data::Dumper::EasyOO->new (indent => 1);
-our $ezbar = Data::Dumper::EasyOO->new (indent => 2);
+use vars qw($ezfoo $ezbar);
+$ezfoo = Data::Dumper::EasyOO->new (indent => 1);
+$ezbar = Data::Dumper::EasyOO->new (indent => 2);
 
 is ($ezfoo->pp($AR), $ARGold[0][1], "\$a->pp(AR)");
 is ($ezbar->pp($AR), $ARGold[0][2], "\$b->pp(AR)");

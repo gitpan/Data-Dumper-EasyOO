@@ -1,11 +1,24 @@
 
-0.02  - on 5.6.1, t/chains.t tried to use unsupported DD methods,
+0.03	Christmas/Kwanzaa!  Thu Dec 25 22:42:57 MST 2003
+      - new() is now also a copy constructor, ie: $ez2 = $ez1->new()
+      - autoprint.t fixes for WinXP. THANKS! <randy@theoryx5.winnipeg.ca>,
+	and for cygwin (somewhat simplistically - \r\n is FS dependent too)
+
+0.03_01 Wed, 24 Dec 2003 05:53:55 GMT
+      - import (init => \our $userEzDD) constructs an EzDD object into
+	the supplied variable (carps if defined $var)
+      - autoprint.t #9 check of $! was linux specific, now handles
+	Solaris too, reported by <mthurn@xcgma001.northgrum.com>. Others TBD. 
+	Also changed some quoting to qq{} for less platform dependence.
+
+0.02	Mon Dec 22 06:07:45 2003 UTC
+      - on 5.6.1, t/chains.t tried to use unsupported DD methods,
 	yielding test failures.  Theyre now only called for 5.8
       - fix double plan() in t/speed.t
-	this and above reported by Barbie <missbarbell@ >
+	this and above reported by Barbie <missbarbell@easynet.co.uk>
       - t/speed.t now uses Test::Benchmark, has old tests as fallback
       - Reworked POD, based on feedback from <mark@summersault.com>
-      - added autoprint
+      - added autoprint, which prints when called in void context
       - added use-time print-style control
       - added pp() and dump() methods
 	

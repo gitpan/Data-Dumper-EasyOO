@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: Data-Dumper-EasyOO
-version: 0.0301
+version: 0.03
 license: perl
 distribution_type: module
 requires:
@@ -12,5 +12,5 @@ conflicts: {}
 provides:
   Data::Dumper::EasyOO:
     file: lib/Data/Dumper/EasyOO.pm
-    version: 0.0301
+    version: 0.03
 generated_by: Module::Build version 0.21
