@@ -1,4 +1,11 @@
 
+0.04_02
+
+      - wholesale POD redo, with benefit of time and distance, I could
+	better appreciate feedback from <mark@summersault.com>
+      - speed test now skipped unless passed a true arg
+      - code tweaks to improve test coverage
+
 0.04_01 Sat Jan  1 19:55:33 MST 2005 (detect a pattern here?)
 
       - yay - I have a user!, with a patch!!

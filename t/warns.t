@@ -5,7 +5,8 @@ eval "use Test::Warn";
 plan skip_all =>
     "Test::Warn needed to test that warnings are properly issued"
     if $@;
-plan tests => 8;
+
+plan tests => 10;
 
 sub warning_is (&$;$);		# prototypes needed cuz eval delays
 sub warning_like (&$;$);	# the protos provided by pkg
@@ -16,11 +17,11 @@ my $ddez = Data::Dumper::EasyOO->new();
 isa_ok ($ddez, 'Data::Dumper::EasyOO', "good object");
 isa_ok ($ddez, 'CODE', "good object");
 
-print $ddez->([1,2,3]);
+#print $ddez->([1,2,3]);
 
 pass "test for disallowed methods";
 
-# traditional form (not the one docd in the Test::Warns pod)
+# traditional form (not the one doc'd in Test::Warn)
 # is needed here, cuz the eval delays the prototype.
 
 warning_is { $ddez->poop(1) } 'illegal method <poop>',
@@ -28,16 +29,33 @@ warning_is { $ddez->poop(1) } 'illegal method <poop>',
 
 warning_like { $ddez->Set(Indent=>1,poop=>1) }
 	      qr/illegal method <(Indent|poop)>/,
-	      "got expected warning";
+              "detected illegal method 'poop'";
 
 warnings_like ( sub { $ddez->Set(doodoo=>1,poop=>1) },
 		[ qr/illegal method <doodoo>/,
 		  qr/illegal method <poop>/ ],
-		"got both expected warnings" );
+		"detected illegal methods 'doodoo' and 'poop'");
 
-warnings_are ( sub { $ddez->Set(doodoo=>1,poop=>1) },
-		[ 'illegal method <doodoo>',
+warnings_are ( sub { $ddez->Set(gormless=>1,poop=>1) },
+		[ 'illegal method <gormless>',
 		  'illegal method <poop>' ],
-		"got both expected warnings" );
+	       "detected illegal methods 'gormless' and 'poop'");
 
 
+warning_like { Data::Dumper::EasyOO->import( bogus => 2 ) } 
+    qr|unknown print-style: bogus at t/warns.t line \d+|,
+    "detected import of unknown print-style";
+
+# set autoprint to illegal value
+$ddez->Set(autoprint => 'gormless');
+
+# then invoke
+TODO: {
+    $TODO = "sort out difference between carped warning and warning";
+
+warnings_like ( sub { $ddez->(bush => 'gormless') },
+		[ qr/illegal autoprint value/,
+		  qr/Argument "gormless" isn\'t numeric/,
+		  ],
+		"detected bad autoprint value");
+}

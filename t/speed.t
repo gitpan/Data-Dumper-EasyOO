@@ -5,6 +5,7 @@ use Benchmark();
 
 eval "use File::Spec; use File::Temp 'tempfile'";
 plan skip_all => "need File::Spec and File::Temp" if $@;
+plan skip_all => "to run speed tests, pass a true arg" unless @ARGV;
 plan tests => 3;
 
 use vars qw($AR $HR @Arrays);
@@ -126,7 +127,7 @@ sub report {
 }
 
 END {
-    `rm ../bench*.dat` unless $ENV{TEST_VERBOSE};
+    # `rm ../bench*.dat` unless $ENV{TEST_VERBOSE};
 }
 
 __END__

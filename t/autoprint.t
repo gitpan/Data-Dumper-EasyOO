@@ -19,6 +19,15 @@ cleanup(); $!=0;
 my $foo = $Win32::IsWin95;	# our var workaround (pre 5.6)
 $foo++;				# silence used-once warning
 
+sub content_matches {		# Mojo, the helper monkey
+    my ($fname, $rex) = @_;
+    open (my $fh, $fname) or die "$!: $fname";
+    local $/ = undef;
+    my $buf = <$fh>;
+    return 1 if $buf =~ m/$rex/;
+    print "failed content-check, got: $buf, expected $rex\n";
+}
+
 SKIP: {
     skip "redirect doesnt work on Win9x", 7 if $Win32::IsWin95;
 
@@ -41,14 +50,12 @@ SKIP: {
 	my $cmd = join ' ', @args;
 	qx{$cmd};
 	warn "$? returned-by $cmd\n" if $?;
-	
-	unless ($^O =~ /MSWin/ or $^O =~ /cygwin/i) {
-	    is (-s "auto.stdout", 24, "auto.stdout is expected size");
-	    is (-s "auto.stderr", 20, "auto.stderr is expected size");
-	} else {
-	    is (-s "auto.stdout", 25, "auto.stdout is expected size");
-	    is (-s "auto.stderr", 21, "auto.stderr is expected size");
-	}
+
+	ok (content_matches("auto.stdout", qr/^\$foo = 'bar to stdout';$/),
+	    "auto.stdout has expected content");
+
+	ok (content_matches("auto.stderr", qr/^\$foo = 'to stderr';$/),
+	    "auto.stderr has expected content");
     }
     
     pass "autoprint => STDOUT at use-time, STDERR via Set()";
@@ -57,9 +64,9 @@ SKIP: {
 	. q{
 	    use Data::Dumper::EasyOO (autoprint => 1);
 	    my $ddez = Data::Dumper::EasyOO->new(indent=>1);
-	    $ddez->(foo => "bar to stdout");
+	    $ddez->(foo => "baz to stdout");
 	    $ddez->Set(autoprint => 2);
-	    $ddez->(foo => "to stderr");
+	    $ddez->(bar => "to stderr");
 	};
 	$code =~ s/\s+/ /msg;	# system() doesnt like newlines
 	$code = ($^O =~ /MSWin/) ? qq{"$code"} : qq{'$code'};
@@ -69,13 +76,11 @@ SKIP: {
 	qx{$cmd};
 	warn"$? returned-by $cmd\n" if $?;
 	
-	unless ($^O =~ /MSWin/ or $^O =~ /cygwin/i) {
-	    is (-s "auto.stdout1", 24, "auto.stdout1 is expected size");
-	    is (-s "auto.stderr1", 20, "auto.stderr1 is expected size");
-	} else {
-	    is (-s "auto.stdout1", 25, "auto.stdout1 is expected size");
-	    is (-s "auto.stderr1", 21, "auto.stderr1 is expected size");
-	}
+	ok (content_matches("auto.stdout1", qr/^\$foo = 'baz to stdout';$/),
+	    "auto.stdout1 has expected content");
+
+	ok (content_matches("auto.stderr1", qr/^\$bar = 'to stderr';$/),
+	    "auto.stderr1 has expected content");
     }
     
     pass "override use-time: new(autoprint=>1), STDERR via Set()";
@@ -84,9 +89,9 @@ SKIP: {
 	. q{
 	    use Data::Dumper::EasyOO (autoprint => 2);
 	    my $ddez = Data::Dumper::EasyOO->new(indent=>1, autoprint=>1);
-	    $ddez->(foo => "bar to stdout");
+	    $ddez->(foo => "blah to stdout");
 	    $ddez->Set(autoprint => 2);
-	    $ddez->(foo => "to stderr");
+	    $ddez->(poo => "to stderr");
 	};
 	$code =~ s/\s+/ /msg;	    # system() doesnt like newlines
 	$code = ($^O =~ /MSWin/) ? qq{"$code"} : qq{'$code'};
@@ -96,13 +101,11 @@ SKIP: {
 	qx{$cmd};
 	warn "$? returned-by $cmd\n" if $?;
 	
-	unless ($^O =~ /MSWin/ or $^O =~ /cygwin/i) {
-	    is (-s "auto.stdout2", 24, "auto.stdout2 is expected size");
-	    is (-s "auto.stderr2", 20, "auto.stderr2 is expected size");
-	} else {
-	    is (-s "auto.stdout2", 25, "auto.stdout2 is expected size");
-	    is (-s "auto.stderr2", 21, "auto.stderr2 is expected size");
-	}
+	ok (content_matches("auto.stdout2", qr/^\$foo = 'blah to stdout';$/),
+	    "auto.stdout2 has expected content");
+
+	ok (content_matches("auto.stderr2", qr/^\$poo = 'to stderr';$/),
+	    "auto.stdout2 has expected content");
     }
 }
 
@@ -121,11 +124,8 @@ SKIP: {
     like ($!, qr/Bad file (number|descriptor)/,
 	  "got expected err writing to closed file: $!");
 
-    if ($^O =~ /MSWin/) {
-	is (-s "out.autoprint", 19, "file is expected size");
-    } else {
-	is (-s "out.autoprint", 18, "file is expected size");
-    }
+    ok (content_matches("out.autoprint", qr/^\$foo = 'to file';$/),
+	"out.autoprint has expected content");
 }
 
 
@@ -137,8 +137,8 @@ SKIP: {
     $io = IO::String->new(my $var);
     $ddez->Set(autoprint => $io);
     $ddez->(foo => 'bar to stdout');
-    is (length $var, 24, "length of IO::string storage");
-    #print "wrote: $var";
+
+    is ($var, "\$foo = 'bar to stdout';\n", "autoprint to IO::string storage");
 }
 
 
