@@ -1,7 +1,10 @@
 #!perl
 # creates 1 EzDD, and alters it repeatedly, using both Set and AUTOLOAD
 
-use Test::More (tests => 326);
+use Test::More;
+if ($] >= 5.00602) { plan tests => 326 }
+else		   { plan tests => 176 }
+
 require 't/Testdata.pm';
 
 use_ok (Data::Dumper::EasyOO);
@@ -24,9 +27,11 @@ for my $t (0..1) {
 
 # methods: Values, Reset  cause failures in tests !
 
-@methods = qw( Indent Terse Seen Names Pad Varname Useqq Purity
-	       Freezer Toaster Deepcopy Bless Pair Maxdepth Useperl
-	       Sortkeys Deparse );
+@methods = qw( Indent Terse Seen Names Pad Varname Useqq 
+	       Purity Freezer Toaster Deepcopy Bless );
+
+push @methods, qw( Pair Maxdepth Useperl Sortkeys Deparse )
+    if $] >= 5.006002;
 
 diag "test that objects are returned from AUTOLOAD(), Set()";
 for my $method (@methods) {
@@ -34,11 +39,11 @@ for my $method (@methods) {
 }
 
 diag "test that 2 method chains are ok";
-for my $method (@methods) {
+for my $m1 (@methods) {
     for my $m2 (@methods) {
-	isa_ok ( $ddez->$method()->$m2(),
+	isa_ok ( $ddez->$m1()->$m2(),
 		 'Data::Dumper::EasyOO',
-		 "\$ezdd -> $method()\t-> $m2()\t" );
+		 "\$ezdd -> $m1()\t-> $m2()\t" );
     }
 }
 

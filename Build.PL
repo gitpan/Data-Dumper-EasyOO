@@ -8,6 +8,7 @@ my $build = Module::Build->new
 	 'perl'           => '5.005_03',
 	 'Data::Dumper'   => '2.00',
      },
+     create_readme => 1,
      );
 $build->create_build_script;
 

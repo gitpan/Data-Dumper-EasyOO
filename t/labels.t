@@ -1,6 +1,8 @@
 #!perl
 
 use Test::More (tests => 43);
+use vars qw( $AR $HR @ARGold @HRGold @ArraysGold @LArraysGold );
+
 require "t/TestLabelled.pm";
 
 use_ok (Data::Dumper::EasyOO);

@@ -1,13 +1,14 @@
 #!perl
 
-use Test::More (tests => 5);
+use Test::More;
 eval "use Test::Warn";
 plan skip_all =>
     "Test::Warn needed to test that warnings are properly issued"
     if $@;
+plan tests => 7;
 
 sub warning_is (&$;$);		# prototypes needed cuz eval delays
-sub warning_like (&$;$);	# those provided by pkg
+sub warning_like (&$;$);	# the protos provided by pkg
 
 use_ok (Data::Dumper::EasyOO);
 
@@ -27,6 +28,16 @@ warning_is { $ddez->poop(1) } 'illegal method <poop>',
 
 warning_like { $ddez->Set(Indent=>1,poop=>1) }
 	      qr/illegal method <(Indent|poop)>/,
-	      "got one of expected warnings";
+	      "got expected warning";
+
+warnings_like ( sub { $ddez->Set(doodoo=>1,poop=>1) },
+		[ qr/illegal method <doodoo>/,
+		  qr/illegal method <poop>/ ],
+		"got both expected warnings" );
+
+warnings_are ( sub { $ddez->Set(doodoo=>1,poop=>1) },
+		[ 'illegal method <doodoo>',
+		  'illegal method <poop>' ],
+		"got both expected warnings" );
 
 

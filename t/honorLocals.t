@@ -25,7 +25,7 @@ isa_ok ($ez2, 'Data::Dumper::EasyOO', "2nd DDEz object");
 is ($ez1->($HR), $HRGold[0][2], "HR, with default indent");
 is ($ez2->($HR), $HRGold[0][0], "HR, ctor overridden indent");
 
-$Data::Dumper::Indent = 1;
+$Data::Dumper::Indent = $Data::Dumper::Indent = 1; #2x
 
 $ez1 = Data::Dumper::EasyOO->new();
 $ez2 = Data::Dumper::EasyOO->new(indent=>0);

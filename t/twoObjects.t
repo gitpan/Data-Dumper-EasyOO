@@ -11,7 +11,7 @@ my $ez2 = Data::Dumper::EasyOO->new(indent=>0);
 isa_ok ($ez1, 'Data::Dumper::EasyOO', "1st DDEz object");
 isa_ok ($ez2, 'Data::Dumper::EasyOO', "2nd DDEz object");
 
-diag "dump with default indent & terse-ness (terse-itude, terse-ticulation ;-)";
+diag "dump with default indent & terse-ness ";
 is ($ez1->($AR), $ARGold[0][2], "AR, with indent, terse defaults");
 is ($ez1->($HR), $HRGold[0][2], "HR, with indent, terse defaults");
 is ($ez2->($AR), $ARGold[0][0], "AR, with indent, terse defaults");

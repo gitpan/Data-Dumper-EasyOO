@@ -1,6 +1,18 @@
 
-0.01_01 started on  Nov 29 12:32
+0.02  - on 5.6.1, t/chains.t tried to use unsupported DD methods,
+	yielding test failures.  Theyre now only called for 5.8
+      - fix double plan() in t/speed.t
+	this and above reported by Barbie <missbarbell@ >
+      - t/speed.t now uses Test::Benchmark, has old tests as fallback
+      - Reworked POD, based on feedback from <mark@summersault.com>
+      - added autoprint
+      - added use-time print-style control
+      - added pp() and dump() methods
+	
+0.01    released Wed, 03 Dec 2003 18:50:34 GMT
+	pod tweaks, more tests, fixed exposed bugs
+
 0.01_02 after consult with Module-Authors ML:
 	renamed to Data::Dumper::EasyOO
-0.01    releasing approx Wed Dec  3 11:11:08 MST 2003
-	pod tweaks, more tests, fixed exposed bugs
+
+0.01_01 started as Data::Dumper::Functor on Nov 29 12:32
