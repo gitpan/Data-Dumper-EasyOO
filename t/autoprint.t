@@ -19,9 +19,9 @@ diag "Set() autoprint to STDOUT, STDERR";
 	use Data::Dumper::EasyOO;
 	my $ddez = Data::Dumper::EasyOO->new(indent=>1);
 	$ddez->Set(autoprint => 1);
-	$ddez->(foo => "bar to stdout");
+	$ddez->(foo => q{bar to stdout});
 	$ddez->Set(autoprint => 2);
-	$ddez->(foo => "to stderr");
+	$ddez->(foo => q{to stderr});
     };
     
     $code =~ s/\s+/ /msg;	# system() doesnt like newlines
@@ -78,14 +78,14 @@ diag "override use-time: new(autoprint=>1), STDERR via Set()";
     $code =~ s/\s+/ /msg;	# system() doesnt like newlines
     # print "code: $code\n";
     
-    system ("$^X -e '$code' > auto.stdout1 2> auto.stderr1");  # call code via -e
+    system ("$^X -e '$code' > auto.stdout2 2> auto.stderr2");  # call code via -e
     print "errs: $! $@" if $! or $@;
     unless ($^O =~ /MSWin/) {
-	is (-s "auto.stdout1", 24, "stdout is expected size");
-	is (-s "auto.stderr1", 20, "stderr is expected size");
+	is (-s "auto.stdout2", 24, "stdout is expected size");
+	is (-s "auto.stderr2", 20, "stderr is expected size");
     } else {
-	is (-s "auto.stdout1", 25, "stdout is expected size");
-	is (-s "auto.stderr1", 21, "stderr is expected size");
+	is (-s "auto.stdout2", 25, "stdout is expected size");
+	is (-s "auto.stderr2", 21, "stderr is expected size");
     }
 }
 
@@ -96,7 +96,7 @@ diag "autoprint to open filehandle (ie GLOB)";
     $ddez->(foo => 'to file');
     close $fh;
     eval { $ddez->(foo => 'to file') };
-    is ($!, 'Bad file descriptor',
+    like ($!, qr/Bad file (number|descriptor)/,
 	"got expected err writing to closed file: $!");
     
     if ($^O =~ /MSWin/) {

@@ -6,7 +6,7 @@ use Carp 'carp';
 
 use 5.005_03;
 use vars qw($VERSION);
-$VERSION = 0.02;
+$VERSION = 0.03_01;
 
 ##############
 my %cliPrefs;	# stores style preferences for each client package
@@ -35,9 +35,18 @@ my @okPrefs = qw( autoprint );
 ##############
 sub import {
     # save EzDD client's preferences for use in new()
-    my ($pkg, %args) = @_;
-    
-    for my $prop (keys %args) {
+    my ($pkg, @args) = @_;
+    $DB::single=1;
+    my %args = @args;
+    #for my $prop (keys %args) {
+    for my $prop (@args) {
+	$val = shift @args;
+	if ($prop eq 'init') {
+	    carp "already initialized" if defined $$val;#args{$prop};
+	    my $foo = delete $args{$prop};
+	    $$foo = Data::Dumper::EasyOO->new(%args);
+	    next;
+	}
 	unless (grep { $_ eq $prop} @styleopts, @okPrefs) {
 	    delete $args{$prop};
 	    carp "unknown style-pref: $prop";
