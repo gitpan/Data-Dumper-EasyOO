@@ -2,18 +2,15 @@ NAME
     Data::Dumper::EasyOO - wraps DD for easy use of various printing styles
 
 ABSTRACT
-    EzDD's main goals are to make it easy to label data that you print/dump,
-    and to make it easy to one or more dumper objects, and one or more print
-    styles with each one.
+    EzDD is an object wrapper upon Data::Dumper (henceforth just DD), and
+    uses an inner DD object to produce all its output. Its purpose is to
+    provide shiny new interface that makes it easy to:
 
-    Its designed to give you maximum control with a minimum of keystrokes.
-    At use-time, you can specify default print style(s), and can also create
-    1 or more EzDD printer objects to use those styles. Each printer
-    object's style can be adjusted thereafter.
-
-    EzDD has similar goals as its step-sibling, Data::Dumper::Simple, but
-    differs in that it does not use source filtering, and it exposes
-    essentially all of DD's functionality, but with an easier interface.
+     1. label your data meaningfully, not just as $VARx
+     2. make and reuse EzDD objects
+     3. customize print styles on any/all of them independently
+     4. provide essentially all of DD's functionality
+     5. do so with fewest keystrokes possible
 
 SYNOPSIS
      my $ezdd;      # declare a default object (optional)
@@ -50,6 +47,18 @@ SYNOPSIS
      $foo->($_) foreach @things;    # print many things
 
 DESCRIPTION
+    EzDD wraps Data::Dumper, and uses an inner DD object to print/dump. By
+    default the output is identical to DD. That said, EzDD gives you a nicer
+    interface, thus encouraging you to tailor DD output the way you like it.
+
+    At use-time, you can specify default print style(s), and can also create
+    many EzDD printer objects to use those style(s). Each printer object's
+    style can be adjusted thereafter.
+
+    EzDD has similar goals as its step-sibling, Data::Dumper::Simple, but
+    differs in that it does not use source filtering, and it exposes
+    essentially all of DD's functionality, but with an easier interface.
+
   Automatic Labelling of your data
     This module 'knows' you prefer labelled => $data, and assumes that
     you've called it that way, except when you havent. Any arglist that
@@ -62,16 +71,18 @@ DESCRIPTION
 
       $ezdd->(person => $person, place => $place);
 
-    but this doesn't:
+    but this doesn't (assuming that $person is an object, not a string):
 
       $ezdd->($person, $place);
 
     If you find that EzDD sometimes misinterprets your array data, just
-    [wrap] your data and label it.
+    explicitly label it, like so:
 
-    DD::Simple does more magic labelling than EzDD, but EzDD avoids source
-    filtering, and gives you an unsuprising way to get what you want without
-    fuss.
+        $ezdd->(some_label => \@yourdata);
+
+    DD::Simple does more magic labelling than EzDD (it grabs the name of the
+    variable being dumped), but EzDD avoids source filtering, and gives you
+    an unsuprising way to get what you want without fuss.
 
   Dumping is default operation
     EzDD recognizes that the only reason you'd use it is to dump your data,
@@ -160,7 +171,7 @@ DESCRIPTION
     \*STDOUT, \*STDERR, or $fh. For convenience, 1, 2 are shorthand for
     STDOUT, STDERR. autoprint => 0 turns it off.
 
-    TODO: autoprint => 3 prints to fileno(3) if it's been opened, or warns
+    TBC: autoprint => 3 prints to fileno(3) if it's been opened, or warns
     and prints to stdout if it hasnt.
 
   Namespace aliasing
@@ -187,7 +198,7 @@ DESCRIPTION
         my $ez;
         use Data::Dumper::EasyOO ( init => \$ez );
 
-  use-time multi-object initialization (TODO)
+  use-time multi-object initialization
     You can even create multiple objects at use-time. EzDD treats the
     arguments as an order-dependent list, and initializes any specified
     objects with the settings seen thus far.
@@ -202,9 +213,9 @@ DESCRIPTION
          %styleA,
          init => \$ez1,     # gets DDdef and styleA
          %styleB,
-         init => \$ez2,     # gets DDdef, styleA and B
+         init => \$ez2,     # gets DDdef, styles A and B
          %styleC,
-         init => \$ez3,     # gets DDdef, styleA, B and C
+         init => \$ez3,     # gets DDdef, styles A, B and C
          %styleD,
          );
 
@@ -217,17 +228,24 @@ DESCRIPTION
         $ez2 = EzDD->new(%DDdefstyle, %styleA, %styleB, %styleC );
       }
 
-    Each %style can supplement or override the previous. CAVEAT: %styleD is
-    not used for any of the initialized objects. Its meaning is currently
-    reserved and undefined
+    Each %style can supplement or override the previous ones. %styleD is not
+    used for any of the initialized objects; it is incorporated into the
+    using package's default style, and is used in all new objects created at
+    runtime.
+
+    Each user package can set its own default style; you can use this, for
+    example, to set a different sortkeys => \&pkg_filter for each. With
+    this, YourReport::Summary and YourReport::Details can dump the info
+    appropriate for your needs.
 
 SEE ALSO (its a crowded space, isnt it!)
     Data::Dumper Data::Dumper::Simple Data::Dump Data::Dump::Streamer
+    Data::TreeDumper
 
 AUTHOR
     Jim Cromie <jcromie@cpan.org>
 
-    Copyright (c) 2003,2005 Jim Cromie. All rights reserved. This program is
-    free software; you can redistribute it and/or modify it under the same
-    terms as Perl itself.
+    Copyright (c) 2003,2004,2005 Jim Cromie. All rights reserved. This
+    program is free software; you can redistribute it and/or modify it under
+    the same terms as Perl itself.
 

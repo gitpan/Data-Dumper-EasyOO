@@ -6,7 +6,7 @@ use Carp 'carp';
 
 use 5.005_03;
 use vars qw($VERSION);
-$VERSION = '0.04_03';
+$VERSION = '0.04';
 
 =head1 NAME
 
@@ -14,19 +14,15 @@ Data::Dumper::EasyOO - wraps DD for easy use of various printing styles
 
 =head1 ABSTRACT
 
-EzDD's main goals are to make it easy to label data that you
-print/dump, and to make it easy to one or more dumper objects, and one
-or more print styles with each one.
+EzDD is an object wrapper upon Data::Dumper (henceforth just DD), and
+uses an inner DD object to produce all its output.  Its purpose is to
+provide shiny new interface that makes it B<easy> to:
 
-Its designed to give you maximum control with a minimum of keystrokes.
-At use-time, you can specify default print style(s), and can also
-create 1 or more EzDD printer objects to use those styles.  Each
-printer object's style can be adjusted thereafter.
-
-EzDD has similar goals as its step-sibling, Data::Dumper::Simple, but
-differs in that it does not use source filtering, and it exposes
-essentially all of DD's functionality, but with an easier interface.
-
+ 1. label your data meaningfully, not just as $VARx
+ 2. make and reuse EzDD objects
+ 3. customize print styles on any/all of them independently
+ 4. provide essentially all of DD's functionality
+ 5. do so with fewest keystrokes possible
 
 =head1 SYNOPSIS
 
@@ -91,7 +87,7 @@ push @styleopts, qw( pair useperl sortkeys deparse )
 my @ddmethods = qw ( Seen Values Names Reset );
 
 # EzDD-specific importable style preferences
-my @okPrefs = qw( autoprint init );
+my @okPrefs = qw( autoprint init _ezdd_noreset );
 
 ##############
 sub import {
@@ -166,87 +162,30 @@ sub AUTOLOAD {
     return $ezdd, @vals;
 }
 
-#my $_privateFunc;
+sub pp {
+    my ($ezdd, @data) = @_;
+    $ezdd->(@data);
+}
+
+*dump = \&pp;
+
+my $_privatePrinter;	# visible only to new and closure object it makes
 
 sub new {
     my ($cls, %cfg) = @_;
     my $prefs = $cliPrefs{caller()} || {};
 
     my $ddo = Data::Dumper->new([]);	# inner obj w bogus data
-    Set($ddo, %$prefs, %cfg);		# ctor-config overrides pkg-config
+    Set($ddo, %$prefs, %cfg);		# ctor-params override pkg-config
 
     #print "EzDD::new() ", Data::Dumper::Dumper [$prefs, \%cfg];
 
     my $code = sub { # closure on $ddo
-	my @args = @_;
-
-	unless ($ddo->{_ezdd_noreset}) {
-	    $ddo->Reset;	# clear seen
-	    $ddo->Names([]);	# clear labels
-	}
-	if (@args == 1) {
-	    # test for AUTOLOADs special access
-	    return $ddo if defined $args[0] and $args[0] eq $magic;
-
-	    # else Regular usage
-	    $ddo->{todump} = \@args;
-	    goto PrintIt;
-	}
-	# else
-	if (@args % 2) {
-	    # cant be a hash, must be array of data
-	    $ddo->{todump} = \@args;
-	    goto PrintIt;
-	}
-	else {
-	    # possible labelled usage, 
-	    # check that all 'labels' are scalars
-	    
-	    my %rev = reverse @args;
-	    if (grep {ref $_} values %rev) {
-		# odd elements are refs, must print as array
-		$ddo->{todump} = \@args;
-		goto PrintIt;
-	    }
-	    my (@labels,@vals);
-	    while (@args) {
-		push @labels, shift @args;
-		push @vals,   shift @args;
-	    }
-	    $ddo->{names}  = \@labels;
-	    $ddo->{todump} = \@vals;
-	    goto PrintIt;
-	}
-      PrintIt:
-	# return dump-str unless void context
-	return $ddo->Dump() if defined wantarray;
-
-	my $auto = (defined $ddo->{autoprint}) ? $ddo->{autoprint} : '';
-
-	unless ($auto) {
-	    carp "called in void context, without autoprint set";
-	    return;
-	}
-	# autoprint to STDOUT, STDERR, or HANDLE (IO or GLOB)
-
-	if ($auto == 1) {
-	    print STDOUT $ddo->Dump();
-	}
-	elsif ($auto == 2) {
-	    print STDERR $ddo->Dump();
-	}
-	elsif (ref $auto and (ref $auto eq 'GLOB' or $auto->can("print"))) {
-	    print $auto $ddo->Dump();
-	}
-	else { 
-	    carp "illegal autoprint value: $ddo->{autoprint}";
-	}
-	return;
+	&$_privatePrinter($ddo, @_);
     };
-
     # copy constructor
     bless $code, ref $cls || $cls;
-
+    
     if (ref $cls) {
 	# clone its settings
 	my $ddo = $cls->($magic);
@@ -257,18 +196,96 @@ sub new {
     return $code;
 }
 
-sub pp {
-    my ($ezdd, @data) = @_;
-    $ezdd->(@data);
-}
 
-*dump = \&pp;
+$_privatePrinter = sub {
+    my ($ddo, @args) = @_;
+
+    unless ($ddo->{_ezdd_noreset}) {
+	$ddo->Reset;	# clear seen
+	$ddo->Names([]);	# clear labels
+    }
+    if (@args == 1) {
+	# test for AUTOLOADs special access
+	return $ddo if defined $args[0] and $args[0] eq $magic;
+	
+	# else Regular usage
+	$ddo->{todump} = \@args;
+	#goto PrintIt;
+    }
+    # else
+    elsif (@args % 2) {
+	# cant be a hash, must be array of data
+	$ddo->{todump} = \@args;
+	#goto PrintIt;
+    }
+    else {
+	# possible labelled usage, 
+	# check that all 'labels' are scalars
+	
+	my %rev = reverse @args;
+	if (grep {ref $_} values %rev) {
+	    # odd elements are refs, must print as array
+	    $ddo->{todump} = \@args;
+	    goto PrintIt;
+	}
+	else {
+	    my (@labels,@vals);
+	    while (@args) {
+		push @labels, shift @args;
+		push @vals,   shift @args;
+	    }
+	    $ddo->{names}  = \@labels;
+	    $ddo->{todump} = \@vals;
+	}
+	#goto PrintIt;
+    }
+  PrintIt:
+    # return dump-str unless void context
+    return $ddo->Dump() if defined wantarray;
+    
+    my $auto = (defined $ddo->{autoprint}) ? $ddo->{autoprint} : 0;
+    
+    unless ($auto) {
+	carp "called in void context, without autoprint set";
+	return;
+    }
+    # autoprint to STDOUT, STDERR, or HANDLE (IO or GLOB)
+    
+    if (ref $auto and (ref $auto eq 'GLOB' or $auto->can("print"))) {
+	print $auto $ddo->Dump();
+    }    
+    elsif ($auto == 1) {
+	print STDOUT $ddo->Dump();
+    }
+    elsif ($auto == 2) {
+	print STDERR $ddo->Dump();
+    }
+    else { 
+	carp "illegal autoprint value: $ddo->{autoprint}";
+    }
+    return;
+};
+
 
 1;
 
 __END__
 
 =head1 DESCRIPTION
+
+EzDD wraps Data::Dumper, and uses an inner DD object to print/dump.
+By default the output is identical to DD.  That said, EzDD gives you a
+nicer interface, thus encouraging you to tailor DD output the way you
+like it.
+
+At use-time, you can specify default print style(s), and can also
+create many EzDD printer objects to use those style(s).  Each printer
+object's style can be adjusted thereafter.
+
+EzDD has similar goals as its step-sibling, Data::Dumper::Simple, but
+differs in that it does not use source filtering, and it exposes
+essentially all of DD's functionality, but with an easier interface.
+
 
 =head2 Automatic Labelling of your data
 
@@ -283,16 +300,18 @@ so this B<labels> your data:
 
   $ezdd->(person => $person, place => $place);
 
-but this doesn't:
+but this doesn't (assuming that $person is an object, not a string):
 
   $ezdd->($person, $place);
 
 If you find that EzDD sometimes misinterprets your array data, just
-[wrap] your data and label it.
+explicitly label it, like so:
 
-DD::Simple does more magic labelling than EzDD, but EzDD avoids source
-filtering, and gives you an unsuprising way to get what you want
-without fuss.
+    $ezdd->(some_label => \@yourdata);
+
+DD::Simple does more magic labelling than EzDD (it grabs the name of
+the variable being dumped), but EzDD avoids source filtering, and
+gives you an unsuprising way to get what you want without fuss.
 
 
 =head2 Dumping is default operation
@@ -393,7 +412,7 @@ You can set autoprint style to any open filehandle, for example
 \*STDOUT, \*STDERR, or $fh.  For convenience, 1, 2 are shorthand for
 STDOUT, STDERR.  autoprint => 0 turns it off.
 
-TODO: autoprint => 3 prints to fileno(3) if it's been opened, or warns
+TBC: autoprint => 3 prints to fileno(3) if it's been opened, or warns
 and prints to stdout if it hasnt.
 
 
@@ -423,7 +442,7 @@ at BEGIN time is trashed at program INIT time.
     my $ez;
     use Data::Dumper::EasyOO ( init => \$ez );
 
-=head2 use-time multi-object initialization (TODO)
+=head2 use-time multi-object initialization
 
 You can even create multiple objects at use-time.  EzDD treats the
 arguments as an order-dependent list, and initializes any specified
@@ -440,9 +459,9 @@ example:
      %styleA,
      init => \$ez1,	# gets DDdef and styleA
      %styleB,
-     init => \$ez2,	# gets DDdef, styleA and B
+     init => \$ez2,	# gets DDdef, styles A and B
      %styleC,
-     init => \$ez3,	# gets DDdef, styleA, B and C
+     init => \$ez3,	# gets DDdef, styles A, B and C
      %styleD,
      );
 
@@ -455,23 +474,29 @@ This is equivalent:
     $ez2 = EzDD->new(%DDdefstyle, %styleA, %styleB, %styleC );
   }
 
-Each %style can supplement or override the previous.  CAVEAT: %styleD
-is not used for any of the initialized objects.  Its meaning is
-currently B<reserved> and B<undefined>
+Each %style can supplement or override the previous ones.  %styleD is
+not used for any of the initialized objects; it is incorporated into
+the using package's default style, and is used in all new objects
+created at runtime.  
+
+Each user package can set its own default style; you can use this, for
+example, to set a different sortkeys => \&pkg_filter for each.  With
+this, YourReport::Summary and YourReport::Details can dump the info
+appropriate for your needs.
 
 
 =head1 SEE ALSO (its a crowded space, isnt it!)
 
 L<Data::Dumper> L<Data::Dumper::Simple> L<Data::Dump>
-L<Data::Dump::Streamer>
+L<Data::Dump::Streamer> L<Data::TreeDumper>
 
 =head1 AUTHOR
 
 Jim Cromie <jcromie@cpan.org>
 
-Copyright (c) 2003,2005 Jim Cromie. All rights reserved.  This program
-is free software; you can redistribute it and/or modify it under the
-same terms as Perl itself.
+Copyright (c) 2003,2004,2005 Jim Cromie. All rights reserved.  This
+program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut
 

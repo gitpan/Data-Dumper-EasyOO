@@ -1,3 +1,11 @@
+0.04
+
+	Refactored new() to minimize closure size, and call a private
+	sub (anonymous subref held in a myvar) instead.
+	Simplified t/autoprint a lot using Test::Output, and also
+	boosted test coverage by doing so. (Shawn Sorichetti, nice module!)
+	pod & test tweaks, various other bits I cant remember.
+
 0.04_03
 
 	fixed some skips to skip the right number

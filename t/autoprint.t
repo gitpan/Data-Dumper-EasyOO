@@ -3,10 +3,7 @@
 # autoprint => 1 causes EzDD obj to print to STDOUT if called in void
 # context.  autoprint => 2 sends output STDERR
 
-use Test::More (tests => 23);
-use Cwd;
-my $cwd = getcwd;
-chomp $cwd;
+use Test::More (tests => 20);
 
 pass "test void-context calls";
 use_ok ( Data::Dumper::EasyOO );
@@ -16,9 +13,6 @@ isa_ok ($ddez, 'Data::Dumper::EasyOO', "new() retval");
 
 cleanup(); $!=0;
 
-my $cement;
-$cement = $Win32::IsWin95;	# silence knave!
-
 sub content_matches {		# Mojo, the helper monkey
     my ($fname, $rex) = @_;
     open (my $fh, $fname) or die "$!: $fname";
@@ -26,94 +20,52 @@ sub content_matches {		# Mojo, the helper monkey
     my $buf = <$fh>;
     return 1 if $buf =~ m/$rex/;
     print "failed content-check, got: $buf, expected $rex\n";
+    return 0;
+}
+
+sub write2it {
+    my ($it, $tag, $what) = @_;
+    my $ddez = Data::Dumper::EasyOO->new(indent=>1);
+    $ddez->Set(autoprint => $it);
+    $ddez->($tag => $what);
 }
 
 SKIP: {
-    skip "redirect doesnt work on Win9x", 9 if $Win32::IsWin95;
+    eval "use Test::Output";
+    skip "need Test::Output to test autoprint to stdout,stderr", 4 if $@;
 
-    my $code;
-    pass "Set() autoprint to STDOUT, STDERR";
-    {
-	$code = qq{ use lib q{$cwd/lib}; }
-	. q{
-	    use Data::Dumper::EasyOO;
-	    my $ddez = Data::Dumper::EasyOO->new(indent=>1);
-	    $ddez->Set(autoprint => 1);
-	    $ddez->(foo => q{bar to stdout});
-	    $ddez->Set(autoprint => 2);
-	    $ddez->(foo => q{to stderr});
-	};
-	$code =~ s/\s+/ /msg;	# system() doesnt like newlines
-	$code = ($^O =~ /MSWin/) ? qq{"$code"} : qq{'$code'};
-	
-	my @args = ($^X, 
-		    #(defined %Devel::Cover::) ? '-MDevel::Cover' : undef,
-		    '-e', $code, '>auto.stdout', '2>auto.stderr');
-	my $cmd = join ' ', @args;
-	# diag $cmd;
-	qx{$cmd};
-	warn "$? returned-by $cmd\n" if $?;
+    stdout_is(sub{write2it(1,'foo','to stdout')},
+	      qq{\$foo = 'to stdout';\n},
+	      "stdout has expected output");
 
-	ok (content_matches("auto.stdout", qr/^\$foo = 'bar to stdout';$/),
-	    "auto.stdout has expected content");
+    stderr_is(sub{write2it(2,'foo','to stderr')},
+	      qq{\$foo = 'to stderr';\n},
+	      "stderr has expected output");
 
-	ok (content_matches("auto.stderr", qr/^\$foo = 'to stderr';$/),
-	    "auto.stderr has expected content");
-    }
-    
-    pass "autoprint => STDOUT at use-time, STDERR via Set()";
-    {
-	$code = qq{ use lib q{$cwd/lib}; }
-	. q{
-	    use Data::Dumper::EasyOO (autoprint => 1);
-	    my $ddez = Data::Dumper::EasyOO->new(indent=>1);
-	    $ddez->(foo => "baz to stdout");
-	    $ddez->Set(autoprint => 2);
-	    $ddez->(bar => "to stderr");
-	};
-	$code =~ s/\s+/ /msg;	# system() doesnt like newlines
-	$code = ($^O =~ /MSWin/) ? qq{"$code"} : qq{'$code'};
-	
-	my @args = ($^X,
-		    #(defined %Devel::Cover::) ? '-MDevel::Cover' : undef,
-		    '-e', $code, '>auto.stdout1', '2>auto.stderr1');
-	my $cmd = join ' ', @args;
-	qx{$cmd};
-	warn"$? returned-by $cmd\n" if $?;
-	
-	ok (content_matches("auto.stdout1", qr/^\$foo = 'baz to stdout';$/),
-	    "auto.stdout1 has expected content");
+    stdout_is(sub{write2it(\*STDOUT,'foo','to stdout')},
+	      qq{\$foo = 'to stdout';\n},
+	      '\*STDOUT has expected output');
 
-	ok (content_matches("auto.stderr1", qr/^\$bar = 'to stderr';$/),
-	    "auto.stderr1 has expected content");
-    }
-    
-    pass "override use-time: new(autoprint=>1), STDERR via Set()";
-    {
-	$code = qq{ use lib q{$cwd/lib}; }
-	. q{
-	    use Data::Dumper::EasyOO (autoprint => 2);
-	    my $ddez = Data::Dumper::EasyOO->new(indent=>1, autoprint=>1);
-	    $ddez->(foo => "blah to stdout");
-	    $ddez->Set(autoprint => 2);
-	    $ddez->(poo => "to stderr");
-	};
-	$code =~ s/\s+/ /msg;	    # system() doesnt like newlines
-	$code = ($^O =~ /MSWin/) ? qq{"$code"} : qq{'$code'};
-	
-	my @args = ($^X,
-		    #(defined %Devel::Cover::) ? '-MDevel::Cover' : undef,
-		    '-e', $code, '>auto.stdout2', '2>auto.stderr2');
-	my $cmd = join ' ', @args;
-	qx{$cmd};
-	warn "$? returned-by $cmd\n" if $?;
-	
-	ok (content_matches("auto.stdout2", qr/^\$foo = 'blah to stdout';$/),
-	    "auto.stdout2 has expected content");
+    stderr_is(sub{write2it(\*STDERR,'foo','to stderr')},
+	      qq{\$foo = 'to stderr';\n},
+	      '\*STDERR has expected output');
 
-	ok (content_matches("auto.stderr2", qr/^\$poo = 'to stderr';$/),
-	    "auto.stdout2 has expected content");
-    }
+    stdout_is(sub{write2it(1,'bar',{a=>1, b=>2})},
+	      <<'EORef', "stdout has expected hashdump");
+$bar = {
+  'a' => 1,
+  'b' => 2
+};
+EORef
+
+    stderr_is(sub{write2it(2,'baz',[qw(foo bar bum)])},
+	      <<'EORef', "stderr has expected arraydump");
+$baz = [
+  'foo',
+  'bar',
+  'bum'
+];
+EORef
 }
 
 
@@ -126,7 +78,9 @@ SKIP: {
     $ddez->(foo => 'to file');
     close $fh;
 
-    diag ("Note: expecting \$! warning: print() on closed filehandle \$fh");
+    # diag ("Note: expecting \$! warning: print() on closed filehandle \$fh");
+    local $SIG{__WARN__} = sub {}; # silence the warning
+
     eval { $ddez->(foo => 'to file') };
     like ($!, qr/Bad file (number|descriptor)/,
 	  "got expected err writing to closed file: $!");
@@ -134,7 +88,6 @@ SKIP: {
     ok (content_matches("out.autoprint", qr/^\$foo = 'to file';$/),
 	"out.autoprint has expected content");
 }
-
 
 SKIP: {
     eval "use IO::String";
@@ -147,7 +100,6 @@ SKIP: {
 
     is ($var, "\$foo = 'bar to stdout';\n", "autoprint to IO::string storage");
 }
-
 
 SKIP: {
     skip "these tests need 5.8.0", 2 if $] < 5.008;

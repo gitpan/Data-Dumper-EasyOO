@@ -1,15 +1,35 @@
 #!perl
 
-use Test::More (tests => 51);
-use vars qw( $AR $HR @ARGold @HRGold @ArraysGold @LArraysGold );
-
+use Test::More (tests => 54);
+use vars qw( $AR $HR @ARGold @HRGold @ArraysGold @LArraysGold @Arrays);
 require "t/TestLabelled.pm";
+use strict;
 
-use_ok (Data::Dumper::EasyOO);
+use_ok q(Data::Dumper::EasyOO);
 my $ezdd = Data::Dumper::EasyOO->new();
 
+is($ezdd->(t1=>2,t3=>4), <<'EORef', "auto-label on array of 4 ints");
+$t1 = 2;
+$t3 = 4;
+EORef
+
+is($ezdd->('one',2,'three',4), <<'EORef', "auto-label on 4 elem array");
+$one = 2;
+$three = 4;
+EORef
+
+SKIP: {
+    skip '- list-of-refs \(1..4) unsupported in this perl',1 if $] < 5.008;
+    is($ezdd->(\(1..4)), <<'EORef', "no labels on array of refs");
+$VAR1 = \1;
+$VAR2 = \2;
+$VAR3 = \3;
+$VAR4 = \4;
+EORef
+}
+
 # uses a single object repeatedly, invokes with label => $data syntax
-pass "test auto-labeling with combos of Terse(T), Indent(I)";
+pass "test auto-labelling with combos of Terse(T), Indent(I)";
 
 for my $t (0..1) {
     pass "following with Terse($t)";
@@ -64,23 +84,3 @@ for my $i (0..$#Arrays-1) {
 
 __END__
 
-#END { print "whatup\n" }
-
-print $ezdd->(\(1..4)),"\n";
-$DB::single = 1;
-print $ezdd->(1,2,3,4),"\n";
-
-print (1..4),"\n";
-print $ezdd->(\(1..4)),"\n";
-
-print $ezdd->((1..4)),"\n";
-
-__END__
-
-print Dumper \@Arrays;
-print @ArraysGold;
-
-for my $i (0..$#Arrays) {
-    print "ok: ", $ezdd->("item$i" => $Arrays[$i]);
-    print "vs: ", $ArraysGold[$i];
-}

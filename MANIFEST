@@ -6,9 +6,11 @@ MANIFEST			This list of files
 META.yml
 README
 t/01_use.t
+t/alias.t
 t/autoprint.t
 t/basic.t
 t/chains.t
+t/emulate.t
 t/honorLocals.t
 t/indent-terse.t
 t/initobj.t

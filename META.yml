@@ -1,6 +1,6 @@
 ---
 name: Data-Dumper-EasyOO
-version: 0.04_03
+version: 0.04
 author:
   - Jim Cromie <jcromie@cpan.org>
 abstract: wraps DD for easy use of various printing styles
@@ -8,8 +8,11 @@ license: perl
 requires:
   Data::Dumper: 2.00
   perl: 5.005_03
+recommends:
+  Test::Output: 0
+  Test::Warn: 0
 provides:
   Data::Dumper::EasyOO:
     file: lib/Data/Dumper/EasyOO.pm
-    version: 0.04_03
+    version: 0.04
 generated_by: Module::Build version 0.2608

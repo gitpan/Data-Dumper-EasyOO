@@ -2,8 +2,8 @@
 # creates 1 EzDD, and alters it repeatedly, using both Set and AUTOLOAD
 
 use Test::More;
-if ($] >= 5.00602) { plan tests => 330 }
-else		   { plan tests => 176 }
+if ($] >= 5.006) { plan tests => 330 }
+else		 { plan tests => 180 }
 
 require 't/Testdata.pm';
 
