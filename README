@@ -37,10 +37,10 @@ DESCRIPTION
     print with as Dumper(), DDs exported procedural interface. Its also easy
     to control print-style, as theyre set within the EzDD object.
 
-    In this document, I use DD as shorthand for Data::Dumper, DD-OO for its
-    object oriented API, and EzDD for this class. Despite the package name,
-    I assume some knowledge about DD, at least wrt explaining why EzDD is
-    better.
+    In this document, I use DD as shorthand for Data::Dumper, DD-OO for DD's
+    object oriented API, and EzDD for *this* class. Despite the package
+    name, I assume some knowledge about DD, at least wrt explaining why EzDD
+    is better.
 
     In DD-OO, you must provide new() with the data to print, then change
     print-style, then print. This 3 step usage tends to be verbose. Because
@@ -70,7 +70,7 @@ FEATURE COMPARISON
 
     You can reduce this 'overhead' too; see "Auto-Construction" in FEATURES
 
-  EzDD printing is brief
+  EzDD printing takes less typing
     Once your $ezdd object is built, printing is as easy as using Dumper().
     Note that $ezdd doesnt even need a method name !
 
@@ -81,7 +81,7 @@ FEATURE COMPARISON
     Using autoprint mode, you can drop the 'print'
 
         $ezdd->Set(autoprint=>1);
-        $ezdd->($foo);
+        $ezdd->($foo);              # prints to STDOUT
 
   Easier Labelling of Data
       old: print Data::Dumper->Dump ( [$a,$b,$c], [qw(a b c)] );
@@ -90,7 +90,7 @@ FEATURE COMPARISON
     Labelling data wih DD-OO is counterintuitive; most perl users like and
     expect to see "labelled => $data". DD-OO is also too punctuation
     intensive, too dependent on having exactly 2 arrayref args, and having
-    them the same length. Also, note that Dumper() cannot label data at all.
+    them the same length. And Dumper() cannot label data at all.
 
   You can independently control print-style on each object
     With Dumper(), print-style is controlled either globally, or by
@@ -169,14 +169,14 @@ FEATURES
         my $ez = Data::Dumper::EasyOO->new();
         $ez->('the-includes' => \%INC);
 
-    The autoprint property can be 1 for STDOUT, 2 for STDERR, or an open
-    FileHandle, and will write accordingly. You can also change this
-    afterwards.
+    The autoprint property can be 1 for STDOUT, 2 for STDERR, an open
+    FileHandle, or any object that can print; EzDD will write to it
+    accordingly. You can also change this afterwards.
 
-        my $ez2 = EzDD->new(autoprint => 2);        # set in ctor
+        my $ez = EzDD->new(autoprint => 2);         # set in ctor
         $ez->Set(autoprint => 2);                   # change during use
 
-  Auto-Construction
+  Auto-Construction (needs perlio)
         use Data::Dumper::EasyOO ( %styles, init => \our $foo );
         $foo->( included_modules => \%INC );
 
@@ -205,8 +205,9 @@ INTERFACE
 
     Set(%printOptions) alters the print style of an existing EzDD object. It
     accepts option names matching the methods that DD provides, and
-    lowercase versions of them. %option values are not validated by EzDD, DD
-    itself may do so, but I havent tested this, and make no promises.
+    lowercase versions of them. %option values are validated by EzDD,
+    against package vars initialized based on DD's version. This is hackish,
+    and probably incorrect in a few cases.
 
     Set() also does not provide accessor functionality; most DD methods
     return the DD object in support of method chaining, they cannot return
@@ -225,9 +226,7 @@ IMPLEMENTATION
 
     new() builds a private Data::Dumper object, then builds and returns a
     closure on that object. The closure provides the printing interface
-    directly, and also provides (via special data value - slightly hackish)
-    access to the underlying DD object for the other methods; Set() and
-    AUTOLOAD().
+    directly, methods do the rest.
 
 POSSIBLE APPLICATIONS
     A client-class dumper. You can create one or a few EzDD objects in your
@@ -261,7 +260,8 @@ CAVEATS, Enhancements, TBD, TBC
 
     Too much dependency on DD
         The down-side of 5.00503 compatibility is that DD was less capable
-        back then. Some have been reported and fixed, but others may lurk.
+        back then. Some modern usages on an ancient DD have been reported
+        and fixed, but others may lurk.
 
     No validation on %printOptions values.
         If DD expects a particular value type, you must provide it; I do no
@@ -269,8 +269,7 @@ CAVEATS, Enhancements, TBD, TBC
 
         If DD carps about stuff passed in, it may blame EzDD, as it will
         probably use carp(), and EzDD is the using package. I regard this as
-        a user error, youve been warned. I will accept patches which place
-        blame properly ;-)
+        a user error, youve been warned. I will accept patches though.
 
     format control not per-use, but on object only
         You cant localize print options for 1 usage. This is because those
@@ -289,11 +288,6 @@ CAVEATS, Enhancements, TBD, TBC
         reflected in DD object attributes. This makes it handy to be
         cavalier wrt method vs attribute vs package-var, but this can be
         slightly confusing wrt reporting of usage errors.
-
-    not *entirely* data-agnostic
-        "$ezdd->('__SA__')" will return underlying DD object, unlike all
-        other data. This hackery is needed cuz the closure is the only
-        handle to the DD object, unless Ive missed something.
 
     add no_reset option
         EzDD uses $ddo->Reset so that $ddo can be reused. a no_reset option

@@ -5,7 +5,7 @@ eval "use Test::Warn";
 plan skip_all =>
     "Test::Warn needed to test that warnings are properly issued"
     if $@;
-plan tests => 7;
+plan tests => 8;
 
 sub warning_is (&$;$);		# prototypes needed cuz eval delays
 sub warning_like (&$;$);	# the protos provided by pkg
@@ -18,7 +18,7 @@ isa_ok ($ddez, 'CODE', "good object");
 
 print $ddez->([1,2,3]);
 
-diag "test for disallowed methods";
+pass "test for disallowed methods";
 
 # traditional form (not the one docd in the Test::Warns pod)
 # is needed here, cuz the eval delays the prototype.

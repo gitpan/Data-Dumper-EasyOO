@@ -1,10 +1,27 @@
 
+0.04_01 Sat Jan  1 19:55:33 MST 2005 (detect a pattern here?)
+
+      - yay - I have a user!, with a patch!!
+	chocolate.boy@email.com sent a clean fix for the __SA__ hack.
+      - various minor test fixes, doc tweaks
+	changed diags to pass, to de-clutter test output
+      - warning tests are heavily reliant on Test::Warn
+      - a couple tests break under 5.00504 - due to modules.
+	I just dont have diligence to upgrade my 5.00504 installation
+	to correct all these use-time failures. No *real* breakages
+      - one particular test annoyance:
+	I get: print() on closed filehandle $fh at lib/Data/Dumper/EasyOO.pm
+	just b4 test expecting that errmsg passes.  I cant suppress
+	it.  That 5.5.4 doesnt have warnings.pm further limits my options.
+
 0.03	Christmas/Kwanzaa!  Thu Dec 25 22:42:57 MST 2003
+
       - new() is now also a copy constructor, ie: $ez2 = $ez1->new()
       - autoprint.t fixes for WinXP. THANKS! <randy@theoryx5.winnipeg.ca>,
 	and for cygwin (somewhat simplistically - \r\n is FS dependent too)
 
 0.03_01 Wed, 24 Dec 2003 05:53:55 GMT
+
       - import (init => \our $userEzDD) constructs an EzDD object into
 	the supplied variable (carps if defined $var)
       - autoprint.t #9 check of $! was linux specific, now handles
@@ -12,6 +29,7 @@
 	Also changed some quoting to qq{} for less platform dependence.
 
 0.02	Mon Dec 22 06:07:45 2003 UTC
+
       - on 5.6.1, t/chains.t tried to use unsupported DD methods,
 	yielding test failures.  Theyre now only called for 5.8
       - fix double plan() in t/speed.t

@@ -125,5 +125,9 @@ sub report {
     }
 }
 
+END {
+    `rm ../bench*.dat` unless $ENV{TEST_VERBOSE};
+}
+
 __END__
 

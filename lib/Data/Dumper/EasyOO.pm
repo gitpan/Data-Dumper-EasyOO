@@ -6,9 +6,12 @@ use Carp 'carp';
 
 use 5.005_03;
 use vars qw($VERSION);
-$VERSION = 0.03;
+$VERSION = 0.04_01;
 
 ##############
+# this (private) reference is passed to the closure to recover
+# the underlying Data::Dumper object
+my $magic = [];
 my %cliPrefs;	# stores style preferences for each client package
 
 # DD print-style options/methods/package-vars/attributes.
@@ -58,7 +61,7 @@ sub Set {
     # sets internal state of private data dumper object
     my ($ezdd, %cfg) = @_;
     my $ddo = $ezdd;
-    $ddo = $ezdd->('__SA__') if ref $ezdd eq __PACKAGE__;
+    $ddo = $ezdd->($magic) if ref $ezdd eq __PACKAGE__;
 
     for my $item (keys %cfg) {
 	#print "$item => $cfg{$item}\n";
@@ -107,7 +110,7 @@ sub new {
 	}
 	if (@args == 1) {
 	    # test for AUTOLOADs special access
-	    return $ddo if defined $args[0] and $args[0] eq '__SA__';
+	    return $ddo if defined $args[0] and $args[0] eq $magic;
 
 	    # else Regular usage
 	    $ddo->{todump} = \@args;
@@ -155,7 +158,7 @@ sub new {
 	elsif ($auto == 2) {
 	    print STDERR $ddo->Dump();
 	}
-	elsif (ref $auto eq 'GLOB' or ref($auto) =~ /^IO/) {
+	elsif (ref $auto eq 'GLOB' or $auto->can("print")) {
 	    print $auto $ddo->Dump();
 	}
 	else { 
@@ -169,7 +172,7 @@ sub new {
 
     if (ref $cls) {
 	# clone its settings
-	my $ddo = $cls->('__SA__');
+	my $ddo = $cls->($magic);
 	my %styles;
 	@styles{@styleopts,@okPrefs} = @$ddo{@styleopts,@okPrefs};
 	$code->Set(%styles,%cfg);
@@ -231,9 +234,9 @@ print with as Dumper(), DDs exported procedural interface.  Its also
 easy to control print-style, as theyre set within the EzDD object.
 
 In this document, I use DD as shorthand for Data::Dumper, DD-OO for
-its object oriented API, and EzDD for this class.  Despite the package
-name, I assume some knowledge about DD, at least wrt explaining why
-EzDD is better.
+DD's object oriented API, and EzDD for *this* class.  Despite the
+package name, I assume some knowledge about DD, at least wrt
+explaining why EzDD is better.
 
 In DD-OO, you must provide new() with the data to print, then change
 print-style, then print.  This 3 step usage tends to be verbose.
@@ -265,7 +268,7 @@ than with DDs package vars.
 
 You can reduce this 'overhead' too; see L<FEATURES/Auto-Construction>
 
-=head2 EzDD printing is brief
+=head2 EzDD printing takes less typing
 
 Once your $ezdd object is built, printing is as easy as using
 Dumper().  Note that $ezdd doesnt even need a method name !
@@ -277,7 +280,7 @@ Dumper().  Note that $ezdd doesnt even need a method name !
 Using autoprint mode, you can drop the 'print'
 
     $ezdd->Set(autoprint=>1);
-    $ezdd->($foo);
+    $ezdd->($foo);		# prints to STDOUT
 
 =head2 Easier Labelling of Data
 
@@ -287,7 +290,7 @@ Using autoprint mode, you can drop the 'print'
 Labelling data wih DD-OO is counterintuitive; most perl users like and
 expect to see C<< labelled => $data >>.  DD-OO is also too punctuation
 intensive, too dependent on having exactly 2 arrayref args, and having
-them the same length.  Also, note that Dumper() cannot label data at all.
+them the same length.  And Dumper() cannot label data at all.
 
 =head2 You can independently control print-style on each object 
 
@@ -376,14 +379,14 @@ Autoprinting allows you to drop the 'print':
     my $ez = Data::Dumper::EasyOO->new();
     $ez->('the-includes' => \%INC);
 
-The autoprint property can be 1 for STDOUT, 2 for STDERR, or an open
-FileHandle, and will write accordingly.  You can also change this
-afterwards.
+The autoprint property can be 1 for STDOUT, 2 for STDERR, an open
+FileHandle, or any object that can print; EzDD will write to it
+accordingly.  You can also change this afterwards.
 
-    my $ez2 = EzDD->new(autoprint => 2);	# set in ctor
+    my $ez = EzDD->new(autoprint => 2);		# set in ctor
     $ez->Set(autoprint => 2);			# change during use
 
-=head2 Auto-Construction
+=head2 Auto-Construction (needs perlio)
 
     use Data::Dumper::EasyOO ( %styles, init => \our $foo );
     $foo->( included_modules => \%INC );
@@ -418,8 +421,9 @@ establish desired printing behavior of that instance.
 
 Set(%printOptions) alters the print style of an existing EzDD object.
 It accepts option names matching the methods that DD provides, and
-lowercase versions of them.  %option values are not validated by EzDD,
-DD itself may do so, but I havent tested this, and make no promises.
+lowercase versions of them.  %option values are validated by EzDD,
+against package vars initialized based on DD's version.  This is
+hackish, and probably incorrect in a few cases.
 
 Set() also does not provide accessor functionality; most DD methods
 return the DD object in support of method chaining, they cannot return
@@ -439,9 +443,7 @@ design.
 
 new() builds a private Data::Dumper object, then builds and returns a
 closure on that object.  The closure provides the printing interface
-directly, and also provides (via special data value - slightly
-hackish) access to the underlying DD object for the other methods;
-Set() and AUTOLOAD().
+directly, methods do the rest.  
 
 =head1 POSSIBLE APPLICATIONS
 
@@ -484,7 +486,8 @@ and unthreaded.
 =item Too much dependency on DD
 
 The down-side of 5.00503 compatibility is that DD was less capable
-back then.  Some have been reported and fixed, but others may lurk.
+back then.  Some modern usages on an ancient DD have been reported and
+fixed, but others may lurk.
 
 =item No validation on %printOptions values.
 
@@ -493,8 +496,7 @@ checking, and rely on DD to complain as fitting.
 
 If DD carps about stuff passed in, it may blame EzDD, as it will
 probably use carp(), and EzDD is the using package.  I regard this as
-a user error, youve been warned.  I will accept patches which place
-blame properly ;-)
+a user error, youve been warned.  I will accept patches though.
 
 =item format control not per-use, but on object only
 
@@ -515,12 +517,6 @@ Modulo lc() and ucfirst() differences, all DD style method-names are
 reflected in DD object attributes.  This makes it handy to be cavalier
 wrt method vs attribute vs package-var, but this can be slightly
 confusing wrt reporting of usage errors.
-
-=item not *entirely* data-agnostic
-
-C<< $ezdd->('__SA__') >> will return underlying DD object, unlike all
-other data.  This hackery is needed cuz the closure is the only handle
-to the DD object, unless Ive missed something.
 
 =item add no_reset option
 

@@ -3,12 +3,12 @@
 # autoprint => 1 causes EzDD obj to print to STDOUT if called in void
 # context.  autoprint => 2 sends output STDERR
 
-use Test::More (tests => 15);
+use Test::More (tests => 23);
 use Cwd;
 my $cwd = getcwd;
 chomp $cwd;
 
-diag "test void-context calls";
+pass "test void-context calls";
 use_ok ( Data::Dumper::EasyOO );
 
 my $ddez = Data::Dumper::EasyOO->new(indent=>1);
@@ -16,13 +16,14 @@ isa_ok ($ddez, 'Data::Dumper::EasyOO', "new() retval");
 
 cleanup(); $!=0;
 
-$Win32::IsWin95;
+my $foo = $Win32::IsWin95;	# our var workaround (pre 5.6)
+$foo++;				# silence used-once warning
 
 SKIP: {
-    skip "redirect doesnt work on Win9x", 6 if $Win32::IsWin95;
+    skip "redirect doesnt work on Win9x", 7 if $Win32::IsWin95;
 
     my $code;
-    diag "Set() autoprint to STDOUT, STDERR";
+    pass "Set() autoprint to STDOUT, STDERR";
     {
 	$code = qq{ use lib q{$cwd/lib}; }
 	. q{
@@ -50,7 +51,7 @@ SKIP: {
 	}
     }
     
-    diag "autoprint => STDOUT at use-time, STDERR via Set()";
+    pass "autoprint => STDOUT at use-time, STDERR via Set()";
     {
 	$code = qq{ use lib q{$cwd/lib}; }
 	. q{
@@ -77,7 +78,7 @@ SKIP: {
 	}
     }
     
-    diag "override use-time: new(autoprint=>1), STDERR via Set()";
+    pass "override use-time: new(autoprint=>1), STDERR via Set()";
     {
 	$code = qq{ use lib q{$cwd/lib}; }
 	. q{
@@ -107,17 +108,19 @@ SKIP: {
 
 
 SKIP: {
-    skip "this open() style not on 5.00503", 2 unless $] >= 5.006;
-    diag "autoprint to open filehandle (ie GLOB)";
+    skip "- open(my \$fh) not in 5.00503", 2 unless $] >= 5.006;
+    pass "testing autoprint to open filehandle (ie GLOB)";
 
     open (my $fh, ">out.autoprint") or die "cant open out.autoprint: $!";
     $ddez->Set(autoprint => $fh);
     $ddez->(foo => 'to file');
     close $fh;
+
+    diag ("Note: expecting \$! warning: print() on closed filehandle \$fh");
     eval { $ddez->(foo => 'to file') };
     like ($!, qr/Bad file (number|descriptor)/,
-	"got expected err writing to closed file: $!");
-    
+	  "got expected err writing to closed file: $!");
+
     if ($^O =~ /MSWin/) {
 	is (-s "out.autoprint", 19, "file is expected size");
     } else {
@@ -129,7 +132,7 @@ SKIP: {
 SKIP: {
     eval "use IO::String";
     skip "these tests need IO::String", 1 if $@;
-    diag "test autoprint => IO using IO::string";
+    pass "testing autoprint => IO using IO::string";
 
     $io = IO::String->new(my $var);
     $ddez->Set(autoprint => $io);
@@ -141,7 +144,7 @@ SKIP: {
 
 SKIP: {
     skip "these tests need 5.8.0", 1 if $] < 5.008;
-    diag "test autoprint => IO using 5.8 open (H, '>', \\\$scalar)";
+    pass "testing autoprint => IO using 5.8 open (H, '>', \\\$scalar)";
     my ($var,$io);
     # w/o eval, this breaks compile under 5.5.3 
     eval "open (\$io, '>', \\\$var)";
@@ -155,8 +158,9 @@ SKIP: {
 
 SKIP: {
     eval "use Test::Warn";
-    skip "these tests need Test::Warn", 3 if $@;
-    diag "test autoprint invocation w.o setup";
+    skip("these tests need Test::Warn", 3) if $@;
+
+    pass("testing autoprint invocation w.o setup");
 
     my $ddez = Data::Dumper::EasyOO->new(indent=>1);
     warning_is ( sub { $ddez->(foo=>'bar') },
@@ -179,7 +183,6 @@ SKIP: {
     warning_is ( sub { $ddez->(foo=>'bar') },
 		 'called in void context, without autoprint set',
 		 "expected warning after autoprint reset to undef");
-
 }
 
 

@@ -1,16 +1,8 @@
 --- #YAML:1.0
 name: Data-Dumper-EasyOO
-version: 0.03
+version: 0.0401
+author:
+  - Jim Cromie <jcromie@cpan.org>
+abstract: wraps DD for easy use of printing styles
 license: perl
-distribution_type: module
-requires:
-  Data::Dumper: 2.00
-  perl: 5.005_03
-recommends: {}
-build_requires: {}
-conflicts: {}
-provides:
-  Data::Dumper::EasyOO:
-    file: lib/Data/Dumper/EasyOO.pm
-    version: 0.03
-generated_by: Module::Build version 0.21
+generated_by: Module::Build version 0.26, without YAML.pm

@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More (tests => 43);
+use Test::More (tests => 51);
 use vars qw( $AR $HR @ARGold @HRGold @ArraysGold @LArraysGold );
 
 require "t/TestLabelled.pm";
@@ -9,10 +9,10 @@ use_ok (Data::Dumper::EasyOO);
 my $ezdd = Data::Dumper::EasyOO->new();
 
 # uses a single object repeatedly, invokes with label => $data syntax
-diag "test auto-labeling with combos of Terse(T), Indent(I)";
+pass "test auto-labeling with combos of Terse(T), Indent(I)";
 
 for my $t (0..1) {
-    diag "following with Terse($t)";
+    pass "following with Terse($t)";
     $ezdd->Terse($t);
 
     for my $i (0..3) {
@@ -25,10 +25,10 @@ for my $t (0..1) {
     }
 }
 
-diag "two labeled data items, with combos of Terse(T), Indent(I)";
+pass "two labeled data items, with combos of Terse(T), Indent(I)";
 
 for my $t (0..1) {
-    diag "following with Terse($t)";
+    pass "following with Terse($t)";
     $ezdd->Terse($t);
 
     for my $i (0..3) {
@@ -42,14 +42,14 @@ for my $t (0..1) {
 
 $ezdd->Set(Terse=>0,Indent=>2); # restore behavior matching DD default
 
-diag "test un-labelling";	# exposed a bug!
+pass "test un-labelling";	# exposed a bug!
 
 for my $i (0..$#Arrays) {
     is ($ezdd->("item$i" => $Arrays[$i]), $LArraysGold[$i], "labeled-data[$i]");
     is ($ezdd->($Arrays[$i]),		  $ArraysGold[$i], "unlabeled-data[$i]");
 }
 
-diag "test programmer intended labelling, right and wrong";
+pass "test programmer intended labelling, right and wrong";
 
 for my $i (0..$#Arrays-1) {
     my $j = $i+1;

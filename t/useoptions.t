@@ -12,10 +12,10 @@ use Data::Dumper::EasyOO ( indent => 2 );
 $main::ezbar = Data::Dumper::EasyOO->new;
 
 package main;
-use Test::More tests => 4;
+use Test::More tests => 5;
 require 't/Testdata.pm';
 
-diag "dump with default indent";
+pass "dump with default indent";
 is ($ezfoo->($AR), $ARGold[0][1], "AR, with Foo imported defaults");
 is ($ezbar->($AR), $ARGold[0][2], "AR, with Bar imported defaults");
 

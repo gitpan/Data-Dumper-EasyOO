@@ -2,7 +2,7 @@
 # test that new() accepts same options as Set
 # also, test Title-case options here
 
-use Test::More (tests => 40);
+use Test::More (tests => 43);
 require "t/Testdata.pm";
 
 use_ok (Data::Dumper::EasyOO);
@@ -13,12 +13,12 @@ isa_ok $ddez, Data::Dumper::EasyOO;
 is ($ddez->($AR), $ARGold[0][2], "new() on AR");
 is ($ddez->($HR), $HRGold[0][2], "new() on HR");
 
-diag "Copy Constructor";
+pass "Copy Constructor";
 my $newEz = $ddez->new;
 isa_ok $newEz, Data::Dumper::EasyOO, "val from copy constructor";
 is ($newEz->($AR), $ARGold[0][2], "cpyd-ezdd on AR");
 
-diag "accept both lowercase and titlecase";
+pass "accept both lowercase and titlecase";
 for $t (0..1) {
     for $i (0..3) {
 	$ddez = Data::Dumper::EasyOO->new(indent=>$i,terse=>$t);
@@ -31,7 +31,7 @@ for $t (0..1) {
     }
 }
 
-diag "Copy Constructor with over-riding args";
+pass "Copy Constructor with over-riding args";
 my $Ez3 = $newEz->new(indent=>1);
 isa_ok $Ez3, Data::Dumper::EasyOO, "val from copy constructor, w args";
 is ($Ez3->($AR), $ARGold[0][1], "cpyd-ezdd on AR");

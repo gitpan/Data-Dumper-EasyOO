@@ -2,7 +2,7 @@
 # creates 1 EzDD, and alters it repeatedly, using both Set and AUTOLOAD
 
 use Test::More;
-if ($] >= 5.00602) { plan tests => 326 }
+if ($] >= 5.00602) { plan tests => 330 }
 else		   { plan tests => 176 }
 
 require 't/Testdata.pm';
@@ -12,11 +12,11 @@ use_ok (Data::Dumper::EasyOO);
 my $ddez = Data::Dumper::EasyOO->new();
 isa_ok ($ddez, 'Data::Dumper::EasyOO', "good DDEz object");
 
-diag "dump with default indent";
+pass "dump with default indent";
 is ($ddez->($AR), $ARGold[0][2], "AR, with indent, terse defaults");
 is ($ddez->($HR), $HRGold[0][2], "HR, with indent, terse defaults");
 
-diag "test method chaining: ->Indent(\$i)->Terse(\$t)";
+pass "test method chaining: ->Indent(\$i)->Terse(\$t)";
 for my $t (0..1) {
     for my $i (0..3) {
 	$ddez->Indent($i)->Terse($t);
@@ -33,12 +33,12 @@ for my $t (0..1) {
 push @methods, qw( Pair Maxdepth Useperl Sortkeys Deparse )
     if $] >= 5.006002;
 
-diag "test that objects are returned from AUTOLOAD(), Set()";
+pass "test that objects are returned from AUTOLOAD(), Set()";
 for my $method (@methods) {
     isa_ok ($ddez->$method(), 'Data::Dumper::EasyOO', "\$ezdd->$method()\t");
 }
 
-diag "test that 2 method chains are ok";
+pass "test that 2 method chains are ok";
 for my $m1 (@methods) {
     for my $m2 (@methods) {
 	isa_ok ( $ddez->$m1()->$m2(),
