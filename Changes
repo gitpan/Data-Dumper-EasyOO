@@ -1,0 +1,6 @@
+
+0.01_01 started on  Nov 29 12:32
+0.01_02 after consult with Module-Authors ML:
+	renamed to Data::Dumper::EasyOO
+0.01    releasing approx Wed Dec  3 11:11:08 MST 2003
+	pod tweaks, more tests, fixed exposed bugs
