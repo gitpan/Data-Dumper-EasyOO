@@ -13,7 +13,7 @@ ABSTRACT
 
     EzDD has similar goals as its step-sibling, Data::Dumper::Simple, but
     differs in that it does not use source filtering, and it exposes
-    essentially all of DD's functionality, with an easier interface.
+    essentially all of DD's functionality, but with an easier interface.
 
 SYNOPSIS
      my $ezdd;      # declare a default object (optional)
@@ -27,19 +27,19 @@ SYNOPSIS
          sortkeys   => 1,           # a personal favorite
 
          # autoconstruct a printer obj (calls EzDD->new) with the defaults
-         init       => \$ezdd,      
+         init       => \$ezdd,      # var must be undef b4 use
 
          # set some more default print-styles
          terse      => 1,           # change DD's default of 0
          autoprint  => $fh,         # prints to $fh when you $ezdd->(\%something);
 
          # autoconstruct a 2nd printer object, using current print-styles
-         init       => \our $ez2,
+         init       => \our $ez2,   # var must be undef b4 use
          );
 
      $ezdd->(p1 => $person);        # print as '$p1 => ...'
 
-     my $foo = EzDD->new(%style)    # create another printer, w new style
+     my $foo = EzDD->new(%style)    # create a printer, via alias, w new style
         ->(there => $place);        # and print with it too.
 
      $ez2-> (p2 => $person);        # dump w $ez2, use its style
@@ -74,10 +74,11 @@ DESCRIPTION
     fuss.
 
   Dumping is default operation
-    EzDD recognizes that the only reason you'd use it is to Dump() your
-    data, so it gives you a shorthand to do so.
+    EzDD recognizes that the only reason you'd use it is to dump your data,
+    so it gives you a shorthand to do so.
 
-      print $ezdd->Dump($foo);      # long way
+      print $ezdd->dump($foo);      # long way
+      print $ezdd->pp($foo);        # still a long way
       print $ezdd->($foo);          # identical shorthand
 
     It helps to think of an EzDD object as analogous to a printer; sometimes
@@ -85,17 +86,18 @@ DESCRIPTION
     orientation, but mostly you just want to print.
 
   Dumping without calling 'print'
-    To save more keystrokes, if you set autoprint => 1, either at use-time
+    To save more keystrokes, you can set autoprint => 1, either at use-time
     (see synopsis), or subequently. Printing is then done for you when you
     call the object.
 
-        $ezdd->($foo);      # even shorter
+        $ezdd->Set(autoprint=>1);   # unless already done
+        $ezdd->($foo);              # even shorter
 
     But this happens only when you want it to, not when you assign the
     results to something else.
 
         $b4 = $ezdd->($foo);        # save rendering in var
-        $foo->bar();                # alter foo obj
+        $foo->bar();                # alter printed obj
 
         # now dump before and after
         print "before: $b4, after: ", $ezdd->($foo);
@@ -173,7 +175,10 @@ DESCRIPTION
     If calling "$ez1 = EzDD->new" is too much work, you can initialize it by
     passing it at use time.
 
-        use Data::Dumper::EasyOO ( init => \our $ez );
+        use Data::Dumper::EasyOO ( %style, init => \our $ez );
+
+    By default, $ez is initialized with DD's defaults, these can be
+    overridden by %style.
 
     If you want to store the handle in "my $ez", then declare the myvar
     prior to the use statement, otherwize the object assigned to it at BEGIN
@@ -183,9 +188,9 @@ DESCRIPTION
         use Data::Dumper::EasyOO ( init => \$ez );
 
   use-time multi-object initialization (TODO)
-    You can even create multiple objects at use-time. If you do so, EzDD
-    treats the arguments as an order-dependent list, and initializes any
-    specified objects with the settings seen thus far.
+    You can even create multiple objects at use-time. EzDD treats the
+    arguments as an order-dependent list, and initializes any specified
+    objects with the settings seen thus far.
 
     In the synopsis example, $ezdd and $ez2 are both initialized, but $ez2
     gets a few more style-tweaks. To better clarify, consider this example:

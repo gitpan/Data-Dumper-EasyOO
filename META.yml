@@ -1,6 +1,6 @@
 ---
 name: Data-Dumper-EasyOO
-version: 0.0402
+version: 0.04_03
 author:
   - Jim Cromie <jcromie@cpan.org>
 abstract: wraps DD for easy use of various printing styles
@@ -11,5 +11,5 @@ requires:
 provides:
   Data::Dumper::EasyOO:
     file: lib/Data/Dumper/EasyOO.pm
-    version: 0.04_02
+    version: 0.04_03
 generated_by: Module::Build version 0.2608

@@ -6,7 +6,7 @@ use Carp 'carp';
 
 use 5.005_03;
 use vars qw($VERSION);
-$VERSION = '0.04_02';
+$VERSION = '0.04_03';
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ printer object's style can be adjusted thereafter.
 
 EzDD has similar goals as its step-sibling, Data::Dumper::Simple, but
 differs in that it does not use source filtering, and it exposes
-essentially all of DD's functionality, with an easier interface.
+essentially all of DD's functionality, but with an easier interface.
 
 
 =head1 SYNOPSIS
@@ -41,19 +41,19 @@ essentially all of DD's functionality, with an easier interface.
      sortkeys	=> 1,		# a personal favorite
 
      # autoconstruct a printer obj (calls EzDD->new) with the defaults
-     init	=> \$ezdd,	
+     init	=> \$ezdd,	# var must be undef b4 use
 
      # set some more default print-styles
      terse	=> 1,	 	# change DD's default of 0
      autoprint	=> $fh,		# prints to $fh when you $ezdd->(\%something);
 
      # autoconstruct a 2nd printer object, using current print-styles
-     init	=> \our $ez2,
+     init	=> \our $ez2,	# var must be undef b4 use
      );
 
  $ezdd->(p1 => $person);	# print as '$p1 => ...'
 
- my $foo = EzDD->new(%style)	# create another printer, w new style
+ my $foo = EzDD->new(%style)	# create a printer, via alias, w new style
     ->(there => $place);	# and print with it too.
 
  $ez2-> (p2 => $person);	# dump w $ez2, use its style
@@ -91,26 +91,41 @@ push @styleopts, qw( pair useperl sortkeys deparse )
 my @ddmethods = qw ( Seen Values Names Reset );
 
 # EzDD-specific importable style preferences
-my @okPrefs = qw( autoprint );
+my @okPrefs = qw( autoprint init );
 
 ##############
 sub import {
     # save EzDD client's preferences for use in new()
+    my ($pkg, @args) = @_;
+    my ($prop, $val, %args);
 
-    # Todo - @args, not %args.
-    my ($pkg, %args) = @_;
+    # handle aliases, multiples allowed (feeping creaturism)
 
-    for my $prop (keys %args) {
-	if ($prop eq 'init') {
-	    carp "wont construct a new EzDD object into non-undef variable"
-		if defined ${$args{$prop}};
-	    my $foo = delete $args{$prop};
-	    $$foo = Data::Dumper::EasyOO->new(%args);
+    foreach my $idx (grep {$args[$_] eq 'alias'} reverse 0..$#args) {
+	($idx, $alias) = splice(@args, $idx, 2);
+	no strict 'refs';
+	#*{$alias.'::'} = *{$pkg.'::'};
+	*{$alias.'::new'} = *{$pkg.'::new'};
+    }
+
+    while ($prop = shift(@args)) {
+	$val = shift(@args);
+
+	if (not grep { $_ eq $prop} @styleopts, @okPrefs) {
+	    carp "unknown print-style: $prop";
 	    next;
 	}
-	unless (grep { $_ eq $prop} @styleopts, @okPrefs) {
-	    delete $args{$prop};
-	    carp "unknown print-style: $prop";
+	elsif ($prop ne 'init') {
+	    $args{$prop} = $val;
+	}
+	else {
+	    carp "init arg must be a ref to a (scalar) variable"
+		unless ref($val) =~ /SCALAR/;
+
+	    carp "wont construct a new EzDD object into non-undef variable"
+		if defined $$val;
+
+	    $$val = Data::Dumper::EasyOO->new(%args);
 	}
     }
     $cliPrefs{caller()} = {%args};	# save the allowed ones
@@ -146,11 +161,12 @@ sub AUTOLOAD {
     my ($ezdd, $arg) = @_;
     (my $meth = $AUTOLOAD) =~ s/.*:://;
     return if $meth eq 'DESTROY';
-    my @vals = $ezdd->Set($meth,$arg);
-    print "wantarray, @vals\n" if wantarray;
+    my @vals = $ezdd->Set($meth => $arg);
     return $ezdd unless wantarray;
     return $ezdd, @vals;
 }
+
+#my $_privateFunc;
 
 sub new {
     my ($cls, %cfg) = @_;
@@ -281,10 +297,11 @@ without fuss.
 
 =head2 Dumping is default operation
 
-EzDD recognizes that the only reason you'd use it is to Dump() your
+EzDD recognizes that the only reason you'd use it is to dump your
 data, so it gives you a shorthand to do so.
 
-  print $ezdd->Dump($foo);	# long way
+  print $ezdd->dump($foo);	# long way
+  print $ezdd->pp($foo);	# still a long way
   print $ezdd->($foo);		# identical shorthand
 
 It helps to think of an EzDD object as analogous to a printer;
@@ -294,17 +311,18 @@ orientation, but mostly you just want to print.
 
 =head2 Dumping without calling 'print'
 
-To save more keystrokes, if you set autoprint => 1, either at use-time
-(see synopsis), or subequently.  Printing is then done for you when
-you call the object.
+To save more keystrokes, you can set autoprint => 1, either at
+use-time (see synopsis), or subequently.  Printing is then done for
+you when you call the object.
 
-    $ezdd->($foo);	# even shorter
+    $ezdd->Set(autoprint=>1);	# unless already done
+    $ezdd->($foo);		# even shorter
 
 But this happens only when you want it to, not when you assign the
 results to something else.
 
     $b4 = $ezdd->($foo);	# save rendering in var
-    $foo->bar();		# alter foo obj
+    $foo->bar();		# alter printed obj
 
     # now dump before and after
     print "before: $b4, after: ", $ezdd->($foo);
@@ -393,7 +411,10 @@ and then use that alias thereafter.
 If calling C<< $ez1 = EzDD->new >> is too much work, you can
 initialize it by passing it at use time.
 
-    use Data::Dumper::EasyOO ( init => \our $ez );
+    use Data::Dumper::EasyOO ( %style, init => \our $ez );
+
+By default, $ez is initialized with DD's defaults, these can be
+overridden by %style.
 
 If you want to store the handle in C<< my $ez >>, then declare the
 myvar prior to the use statement, otherwize the object assigned to it
@@ -404,9 +425,9 @@ at BEGIN time is trashed at program INIT time.
 
 =head2 use-time multi-object initialization (TODO)
 
-You can even create multiple objects at use-time.  If you do so, EzDD
-treats the arguments as an order-dependent list, and initializes any
-specified objects with the settings seen thus far.
+You can even create multiple objects at use-time.  EzDD treats the
+arguments as an order-dependent list, and initializes any specified
+objects with the settings seen thus far.
 
 In the synopsis example, $ezdd and $ez2 are both initialized, but $ez2
 gets a few more style-tweaks.  To better clarify, consider this

@@ -64,6 +64,19 @@ for my $i (0..$#Arrays-1) {
 
 __END__
 
+#END { print "whatup\n" }
+
+print $ezdd->(\(1..4)),"\n";
+$DB::single = 1;
+print $ezdd->(1,2,3,4),"\n";
+
+print (1..4),"\n";
+print $ezdd->(\(1..4)),"\n";
+
+print $ezdd->((1..4)),"\n";
+
+__END__
+
 print Dumper \@Arrays;
 print @ArraysGold;
 

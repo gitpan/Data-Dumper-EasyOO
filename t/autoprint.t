@@ -16,8 +16,8 @@ isa_ok ($ddez, 'Data::Dumper::EasyOO', "new() retval");
 
 cleanup(); $!=0;
 
-my $foo = $Win32::IsWin95;	# our var workaround (pre 5.6)
-$foo++;				# silence used-once warning
+my $cement;
+$cement = $Win32::IsWin95;	# silence knave!
 
 sub content_matches {		# Mojo, the helper monkey
     my ($fname, $rex) = @_;
@@ -29,7 +29,7 @@ sub content_matches {		# Mojo, the helper monkey
 }
 
 SKIP: {
-    skip "redirect doesnt work on Win9x", 7 if $Win32::IsWin95;
+    skip "redirect doesnt work on Win9x", 9 if $Win32::IsWin95;
 
     my $code;
     pass "Set() autoprint to STDOUT, STDERR";
@@ -46,8 +46,11 @@ SKIP: {
 	$code =~ s/\s+/ /msg;	# system() doesnt like newlines
 	$code = ($^O =~ /MSWin/) ? qq{"$code"} : qq{'$code'};
 	
-	my @args = ($^X, '-e', $code, '>auto.stdout', '2>auto.stderr');
+	my @args = ($^X, 
+		    #(defined %Devel::Cover::) ? '-MDevel::Cover' : undef,
+		    '-e', $code, '>auto.stdout', '2>auto.stderr');
 	my $cmd = join ' ', @args;
+	# diag $cmd;
 	qx{$cmd};
 	warn "$? returned-by $cmd\n" if $?;
 
@@ -71,7 +74,9 @@ SKIP: {
 	$code =~ s/\s+/ /msg;	# system() doesnt like newlines
 	$code = ($^O =~ /MSWin/) ? qq{"$code"} : qq{'$code'};
 	
-	my @args = ($^X, '-e', $code, '>auto.stdout1', '2>auto.stderr1');
+	my @args = ($^X,
+		    #(defined %Devel::Cover::) ? '-MDevel::Cover' : undef,
+		    '-e', $code, '>auto.stdout1', '2>auto.stderr1');
 	my $cmd = join ' ', @args;
 	qx{$cmd};
 	warn"$? returned-by $cmd\n" if $?;
@@ -96,7 +101,9 @@ SKIP: {
 	$code =~ s/\s+/ /msg;	    # system() doesnt like newlines
 	$code = ($^O =~ /MSWin/) ? qq{"$code"} : qq{'$code'};
 	
-	my @args = ($^X, '-e', $code, '>auto.stdout2', '2>auto.stderr2');
+	my @args = ($^X,
+		    #(defined %Devel::Cover::) ? '-MDevel::Cover' : undef,
+		    '-e', $code, '>auto.stdout2', '2>auto.stderr2');
 	my $cmd = join ' ', @args;
 	qx{$cmd};
 	warn "$? returned-by $cmd\n" if $?;
@@ -111,7 +118,7 @@ SKIP: {
 
 
 SKIP: {
-    skip "- open(my \$fh) not in 5.00503", 2 unless $] >= 5.006;
+    skip "- open(my \$fh) not in 5.00503", 3 unless $] >= 5.006;
     pass "testing autoprint to open filehandle (ie GLOB)";
 
     open (my $fh, ">out.autoprint") or die "cant open out.autoprint: $!";
@@ -131,7 +138,7 @@ SKIP: {
 
 SKIP: {
     eval "use IO::String";
-    skip "these tests need IO::String", 1 if $@;
+    skip "these tests need IO::String", 2 if $@;
     pass "testing autoprint => IO using IO::string";
 
     $io = IO::String->new(my $var);
@@ -143,7 +150,7 @@ SKIP: {
 
 
 SKIP: {
-    skip "these tests need 5.8.0", 1 if $] < 5.008;
+    skip "these tests need 5.8.0", 2 if $] < 5.008;
     pass "testing autoprint => IO using 5.8 open (H, '>', \\\$scalar)";
     my ($var,$io);
     # w/o eval, this breaks compile under 5.5.3 
@@ -158,7 +165,7 @@ SKIP: {
 
 SKIP: {
     eval "use Test::Warn";
-    skip("these tests need Test::Warn", 3) if $@;
+    skip("these tests need Test::Warn", 4) if $@;
 
     pass("testing autoprint invocation w.o setup");
 
@@ -173,17 +180,17 @@ SKIP: {
     $ddez->(foo => 'to file');
 
     close $fh;
-    # test size after closing. b4 is ng - os io sensitive
-    unless ($^O =~ /MSWin/ or $^O =~ /cygwin/i) {
-	is (-s "out.autoprint", 32, "output to file after setup");
-    } else {
-	is (-s "out.autoprint", 33, "output to file after setup");
-    }
+
+    ok (content_matches("out.autoprint",
+			qr/^\$ok = 'yeah';\n\$foo = 'to file';$/),
+	"out.autoprint has expected content");
+
     $ddez->Set(autoprint => undef);
     warning_is ( sub { $ddez->(foo=>'bar') },
 		 'called in void context, without autoprint set',
 		 "expected warning after autoprint reset to undef");
 }
+
 
 
 unless ($ENV{TEST_VERBOSE}) {

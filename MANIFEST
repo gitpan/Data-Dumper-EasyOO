@@ -23,3 +23,10 @@ t/TestLabelled.pm
 t/twoObjects.t
 t/useoptions.t
 t/warns.t
+cover_db/blib-lib-Data-Dumper-EasyOO-pm--branch.html
+cover_db/blib-lib-Data-Dumper-EasyOO-pm--condition.html
+cover_db/blib-lib-Data-Dumper-EasyOO-pm.html
+cover_db/blib-lib-Data-Dumper-EasyOO-pm--subroutine.html
+cover_db/coverage.html
+cover_db/cover.css
+

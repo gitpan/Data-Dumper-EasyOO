@@ -1,3 +1,9 @@
+0.04_03
+
+	fixed some skips to skip the right number
+	tweaks and tests to boost Devel::Cover numbers
+	added multiple init variables
+	added t/emulate.t
 
 0.04_02
 
@@ -5,6 +11,8 @@
 	better appreciate feedback from <mark@summersault.com>
       - speed test now skipped unless passed a true arg
       - code tweaks to improve test coverage
+      - better autoprint tests
+      - a few additional warnings, useoptions tests
 
 0.04_01 Sat Jan  1 19:55:33 MST 2005 (detect a pattern here?)
 
