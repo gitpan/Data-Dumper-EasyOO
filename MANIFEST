@@ -11,6 +11,7 @@ t/autoprint.t
 t/basic.t
 t/chains.t
 t/emulate.t
+t/ezdump.t
 t/honorLocals.t
 t/indent-terse.t
 t/initobj.t

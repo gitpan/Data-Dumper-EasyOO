@@ -3,7 +3,7 @@
 # autoprint => 1 causes EzDD obj to print to STDOUT if called in void
 # context.  autoprint => 2 sends output STDERR
 
-use Test::More (tests => 20);
+use Test::More (tests => 22);
 
 pass "test void-context calls";
 use_ok ( Data::Dumper::EasyOO );
@@ -24,33 +24,33 @@ sub content_matches {		# Mojo, the helper monkey
 }
 
 sub write2it {
-    my ($it, $tag, $what) = @_;
+    my ($it, $i, $tag, $what) = @_;
     my $ddez = Data::Dumper::EasyOO->new(indent=>1);
-    $ddez->Set(autoprint => $it);
+    $ddez->Set(indent => $i, autoprint => $it);
     $ddez->($tag => $what);
 }
 
 SKIP: {
     eval "use Test::Output";
-    skip "need Test::Output to test autoprint to stdout,stderr", 4 if $@;
+    skip "need Test::Output to test autoprint to stdout,stderr", 8 if $@;
 
-    stdout_is(sub{write2it(1,'foo','to stdout')},
+    stdout_is(sub{write2it(1, 1, 'foo','to stdout')},
 	      qq{\$foo = 'to stdout';\n},
 	      "stdout has expected output");
 
-    stderr_is(sub{write2it(2,'foo','to stderr')},
+    stderr_is(sub{write2it(2,1, 'foo','to stderr')},
 	      qq{\$foo = 'to stderr';\n},
 	      "stderr has expected output");
 
-    stdout_is(sub{write2it(\*STDOUT,'foo','to stdout')},
+    stdout_is(sub{write2it(\*STDOUT,1, 'foo','to stdout')},
 	      qq{\$foo = 'to stdout';\n},
 	      '\*STDOUT has expected output');
 
-    stderr_is(sub{write2it(\*STDERR,'foo','to stderr')},
+    stderr_is(sub{write2it(\*STDERR,1, 'foo','to stderr')},
 	      qq{\$foo = 'to stderr';\n},
 	      '\*STDERR has expected output');
 
-    stdout_is(sub{write2it(1,'bar',{a=>1, b=>2})},
+    stdout_is(sub{write2it(1, 1, 'bar',{a=>1, b=>2})},
 	      <<'EORef', "stdout has expected hashdump");
 $bar = {
   'a' => 1,
@@ -58,13 +58,30 @@ $bar = {
 };
 EORef
 
-    stderr_is(sub{write2it(2,'baz',[qw(foo bar bum)])},
+    stdout_is(sub{write2it(1, 2, 'bar',{a=>1, b=>2})},
+	      <<'EORef', "stdout has expected hashdump");
+$bar = {
+         'a' => 1,
+         'b' => 2
+       };
+EORef
+
+    stderr_is(sub{write2it(2, 1, 'baz',[qw(foo bar bum)])},
 	      <<'EORef', "stderr has expected arraydump");
 $baz = [
   'foo',
   'bar',
   'bum'
 ];
+EORef
+
+    stderr_is(sub{write2it(2, 2, 'baz',[qw(foo bar bum)])},
+	      <<'EORef', "stderr has expected arraydump");
+$baz = [
+         'foo',
+         'bar',
+         'bum'
+       ];
 EORef
 }
 

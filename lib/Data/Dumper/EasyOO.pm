@@ -6,7 +6,7 @@ use Carp 'carp';
 
 use 5.005_03;
 use vars qw($VERSION);
-$VERSION = '0.04';
+$VERSION = '0.05_01';
 
 =head1 NAME
 
@@ -14,9 +14,9 @@ Data::Dumper::EasyOO - wraps DD for easy use of various printing styles
 
 =head1 ABSTRACT
 
-EzDD is an object wrapper upon Data::Dumper (henceforth just DD), and
-uses an inner DD object to produce all its output.  Its purpose is to
-provide shiny new interface that makes it B<easy> to:
+EzDD is an object wrapper around Data::Dumper (henceforth just DD),
+and uses an inner DD object to produce all its output.  Its purpose is
+to make DD's OO capabilities easier to use, ie to make it easy to:
 
  1. label your data meaningfully, not just as $VARx
  2. make and reuse EzDD objects
@@ -26,38 +26,85 @@ provide shiny new interface that makes it B<easy> to:
 
 =head1 SYNOPSIS
 
- my $ezdd;	# declare a default object (optional)
+1st, an equivalent to DD's Dumper, which prints exactly like Dumper does
 
- use Data::Dumper::EasyOO
-    (
-     alias	=> EzDD,	# a temporary top-level-name alias
-     
-     # set some print-style defaults
-     indent	=> 1,		# change DD's default from 2
-     sortkeys	=> 1,		# a personal favorite
+    use Data::Dumper::EasyOO;
+    print ezdump([1,3]);
 
-     # autoconstruct a printer obj (calls EzDD->new) with the defaults
-     init	=> \$ezdd,	# var must be undef b4 use
+which prints:
 
-     # set some more default print-styles
-     terse	=> 1,	 	# change DD's default of 0
-     autoprint	=> $fh,		# prints to $fh when you $ezdd->(\%something);
+    $VAR1 = [
+              1,
+              3
+            ];
 
-     # autoconstruct a 2nd printer object, using current print-styles
-     init	=> \our $ez2,	# var must be undef b4 use
-     );
+Here, we provide our own (meaningful) label, and use autoprinting, and
+thereby drop the 'print' from all ezdump calls.
 
- $ezdd->(p1 => $person);	# print as '$p1 => ...'
 
- my $foo = EzDD->new(%style)	# create a printer, via alias, w new style
-    ->(there => $place);	# and print with it too.
+    use Data::Dumper::EasyOO (autoprint => 1);
+    ezdump ( guest_list => { Joe => 'beer', Betsy => 'wine' });
 
- $ez2-> (p2 => $person);	# dump w $ez2, use its style
+which prints:
 
- $foo->(here => $where);	# dump w $foo style (use 2 w/o interference)
+    $guest_list = {
+                    'Joe' => 'beer',
+                    'Betsy' => 'wine'
+                  };
 
- $foo->Set(%morestyle);		# change style at runtime
- $foo->($_) foreach @things;	# print many things
+
+And theres much more...
+
+=head1 DESCRIPTION
+
+EzDD wraps Data::Dumper, and uses an inner DD object to print/dump.
+By default the output is identical to DD.  That said, EzDD gives you a
+nicer interface, thus encouraging you to tailor DD output the way you
+like it.
+
+A primary design feature of EzDD is that you can choose your preferred
+printing style in the 'use' statement.  EzDD replaces the usual
+'import' semantics with the same (property => value) pairs as are
+available in new().  
+
+You can think of the use statement as a way to set new()'s default
+behavior once, and reuse those styles (or override and supplement
+them) on EzDD objects you create thereafter.
+
+All of DD's style-setting methods are available in EzDD as both
+properties to new(), and as object methods; its your choice.
+
+=head2 An easy use of ezdump()
+
+For maximum laziness support, ezdump() is exported into your
+namespace, and supports the synopsis example.  $ezdump is also
+exported; it is the EzDD object that ezdump() uses to do its dumping,
+and allows you to tailor ezdump()s print-style.  It also lets you use
+OO style if you prefer.
+
+Continuing from 2nd synopsis example...
+
+    $ezdump->Set(sortkeys=>1);
+    ezdump ( guest_list => { Joe => 'beer', Betsy => 'wine' });
+    print "\n";
+    $ezdump->Indent(1);
+    ezdump ( guest_list => { Joe => 'beer', Betsy => 'wine' });
+
+which prints:
+
+    $guest_list = {
+                    'Betsy' => 'wine',
+                    'Joe' => 'beer'
+                  };
+
+    $guest_list = {
+      'Betsy' => 'wine',
+      'Joe' => 'beer'
+    };
+
+The print-styles are set 2 times; 1st as a property setting, 2nd done
+like a DD method.  The styles accumulate and persist on the object.
+
 
 =cut
 
@@ -94,14 +141,16 @@ sub import {
     # save EzDD client's preferences for use in new()
     my ($pkg, @args) = @_;
     my ($prop, $val, %args);
+    my (@aliases, @ezdds);
+    my $caller = caller();
 
     # handle aliases, multiples allowed (feeping creaturism)
 
     foreach my $idx (grep {$args[$_] eq 'alias'} reverse 0..$#args) {
 	($idx, $alias) = splice(@args, $idx, 2);
 	no strict 'refs';
-	#*{$alias.'::'} = *{$pkg.'::'};
-	*{$alias.'::new'} = *{$pkg.'::new'};
+	*{$alias.'::new'} = \&{$pkg.'::new'};
+	push @aliases, $alias;
     }
 
     while ($prop = shift(@args)) {
@@ -113,6 +162,7 @@ sub import {
 	}
 	elsif ($prop ne 'init') {
 	    $args{$prop} = $val;
+	    push @ezdds, $val;
 	}
 	else {
 	    carp "init arg must be a ref to a (scalar) variable"
@@ -124,8 +174,38 @@ sub import {
 	    $$val = Data::Dumper::EasyOO->new(%args);
 	}
     }
-    $cliPrefs{caller()} = {%args};	# save the allowed ones
-    #print "EzDD client cache: ", Data::Dumper::Dumper \%cliPrefs;
+    $cliPrefs{$caller} = \%args;	# save the allowed ones
+
+    # export ezdump() unconditionally
+    # no warnings 'redefine';
+    local $SIG{__WARN__} = sub {
+	carp "@_" unless $_[0] =~ /ezdump redefined/;
+    };
+    my $ezdump = $pkg->new(%args);
+    *{$caller.'::ezdump'} = $ezdump; # export ezdump()
+    ${$caller.'::ezdump'} = $ezdump; # export $ezdump = \&ezdump
+
+    return;
+
+=for consideration
+
+    # rest is EXPERIMENTAL, and incomplete, and broken
+    # Im not sure I like it anyway, even if it did work
+
+    if (@aliases) { # && not @ezdds) {
+	# create default objects into the aliases
+
+	foreach my $alias (@aliases) {
+	    my $x = $pkg->new();
+
+	    # create the alias in caller pkg
+	    ${$caller.'::'.$alias} = $x;
+
+	    # this breaks aliasPkg->new() calls
+	    # *{$caller.'::'.$alias} = \&$x;
+	}
+    }
+=cut
 }
 
 sub Set {
@@ -133,6 +213,8 @@ sub Set {
     my ($ezdd, %cfg) = @_;
     my $ddo = $ezdd;
     $ddo = $ezdd->($magic) if ref $ezdd eq __PACKAGE__;
+
+    $ddo->{_ezdd_noreset} = 1 if $cfg{_ezdd_noreset};
 
     for my $item (keys %cfg) {
 	#print "$item => $cfg{$item}\n";
@@ -271,27 +353,16 @@ $_privatePrinter = sub {
 
 __END__
 
-=head1 DESCRIPTION
+=head1 FEATURES
 
-EzDD wraps Data::Dumper, and uses an inner DD object to print/dump.
-By default the output is identical to DD.  That said, EzDD gives you a
-nicer interface, thus encouraging you to tailor DD output the way you
-like it.
-
-At use-time, you can specify default print style(s), and can also
-create many EzDD printer objects to use those style(s).  Each printer
-object's style can be adjusted thereafter.
-
-EzDD has similar goals as its step-sibling, Data::Dumper::Simple, but
-differs in that it does not use source filtering, and it exposes
-essentially all of DD's functionality, but with an easier interface.
-
+The following features are discussed in OO context, but are nearly all
+applicable to ezdump() via its associated $ezdump object-handle.
 
 =head2 Automatic Labelling of your data
 
-This module 'knows' you prefer B<< labelled => $data >>, and assumes
-that you've called it that way, except when you havent.  Any arglist
-that looks like a list of pairs is treated as as such, by 2 rules:
+EzDD 'knows' you prefer B<< labelled => $data >>, and assumes that
+you've called it that way, except when you havent.  Any arglist that
+looks like a list of pairs is treated as as such, by 2 rules:
 
   1. arglist length is even
   2. no candidate-labels are refs to other structures
@@ -360,7 +431,6 @@ You can chain them too:
 
     $ezdd->Indent(2)->Terse(1);
 
-
 =head2 setting print styles using B<Set()>
 
 The emulation above is really dispatched to Set(); those 2 examples
@@ -377,6 +447,9 @@ other:
 
     $ez2->Set(%addstyle2);
     $ez3->Set(%addstyle3);
+
+For maximum laziness, mixed-case versions of both method calls and
+properties are also supported.
 
 
 =head2 Creating new printer-objects
@@ -405,7 +478,7 @@ Clone an existing printer, with style overrides:
     print $fh $ezdd->($bar);
 
     # auto-print way
-    $ezdd->Set(autoprint => 1);	# to stdout
+    $ezdd->Set(autoprint => $fh);
     $ezdd->($bar);
 
 You can set autoprint style to any open filehandle, for example
@@ -484,11 +557,57 @@ example, to set a different sortkeys => \&pkg_filter for each.  With
 this, YourReport::Summary and YourReport::Details can dump the info
 appropriate for your needs.
 
+=head1 A FEATURE-FULL EXAMPLE
+
+This is a rather over-the-top usage.
+
+1st, it sets an alias, with which you can shorten calls to new().
+2nd, it sets several of my favorite print styles.  3rd, it initializes
+several dumper objects, giving each of them slightly different
+print-styles.
+
+ my $ezdd;	# declare a handle for an object to be initialized
+
+ use Data::Dumper::EasyOO
+    (
+     alias	=> EzDD,	# a temporary top-level-name alias
+     
+     # set some print-style defaults
+     indent	=> 1,		# change DD's default from 2
+     sortkeys	=> 1,		# a personal favorite
+
+     # autoconstruct a printer obj (calls EzDD->new) with the defaults
+     init	=> \$ezdd,	# var must be undef b4 use
+
+     # set some more default print-styles
+     terse	=> 1,	 	# change DD's default of 0
+     autoprint	=> $fh,		# prints to $fh when you $ezdd->(\%something);
+
+     # autoconstruct a 2nd printer object, using current print-styles
+     init	=> \our $ez2,	# var must be undef b4 use
+     );
+
+ $ezdd->(p1 => $person);	# print as '$p1 => ...'
+
+ my $foo = EzDD->new(%style)	# create a printer, via alias, w new style
+    ->(there => $place);	# and print with it too.
+
+ $ez2-> (p2 => $person);	# dump w $ez2, use its style
+
+ $foo->(here => $where);	# dump w $foo style (use 2 w/o interference)
+
+ $foo->Set(%morestyle);		# change style at runtime
+ $foo->($_) foreach @things;	# print many things
+
 
 =head1 SEE ALSO (its a crowded space, isnt it!)
 
-L<Data::Dumper> L<Data::Dumper::Simple> L<Data::Dump>
-L<Data::Dump::Streamer> L<Data::TreeDumper>
+ L<Data::Dumper>		the mother of them all
+ L<Data::Dumper::Simple>	nice interface, basic feature set
+ L<Data::Dumper::EasyOO>	easyest of them all :-)
+ L<Data::Dump>			has cool feature to squeeze data
+ L<Data::Dump::Streamer>	highly accurate, evaluable output
+ L<Data::TreeDumper>		lots of output options
 
 =head1 AUTHOR
 
@@ -499,4 +618,6 @@ program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
 
 =cut
+
+__END__
 

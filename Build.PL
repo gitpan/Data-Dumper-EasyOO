@@ -10,8 +10,8 @@ With them, you should get following results from `make testcover`
 ----------------------------------- ------ ------ ------ ------ ------ ------
 File                                  stmt branch   cond    sub   time  total
 ----------------------------------- ------ ------ ------ ------ ------ ------
-blib/lib/Data/Dumper/EasyOO.pm       100.0  100.0   80.0  100.0  100.0   99.1
-Total                                100.0  100.0   80.0  100.0  100.0   99.1
+blib/lib/Data/Dumper/EasyOO.pm       100.0   92.3   80.0  100.0  100.0   97.6
+Total                                100.0   92.3   80.0  100.0  100.0   97.6
 ----------------------------------- ------ ------ ------ ------ ------ ------
 
 Yes, Im pleased with myself :-)
