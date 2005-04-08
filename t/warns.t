@@ -42,11 +42,11 @@ warnings_are ( sub { $ddez->Set(gormless=>1,poop=>1) },
 	       "detected illegal methods 'gormless' and 'poop'");
 
 
-warning_like { Data::Dumper::EasyOO->import( bogus => 2 ) } 
-    qr|unknown print-style: bogus at t/warns.t line \d+|,
-    "detected import of unknown print-style";
+warning_like ( sub { Data::Dumper::EasyOO->import( bogus => 2 ) }, 
+	       qr/unknown print-style: bogus/,
+	       "detected import of unknown print-style");
 
-# set autoprint to illegal value
+# set autoprint to illegal value (not checked till used, maybe later)
 $ddez->Set(autoprint => 'gormless');
 
 # then invoke

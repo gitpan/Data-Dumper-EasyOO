@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More (tests => 10);
+use Test::More (tests => 11);
 
 =head1 test Abstract
 
@@ -9,6 +9,7 @@ make sure they dont trample on each other.
 
 =cut
 
+use vars qw ($AR $HR @ARGold @HRGold);
 require 't/Testdata.pm';
 # share imported pkgs via myvars to other pkgs in file
 my ($ar,$hr) = ($AR, $HR);
@@ -19,9 +20,13 @@ my @hrgold = @HRGold;
 use Data::Dumper::EasyOO (alias => 'EzDD');
 
 my $ddez = EzDD->new();
-is ($ddez->($AR), $ARGold[0][2], "alias => 'EzDD' into main");
-is ($ddez->($HR), $HRGold[0][2], "alias => 'EzDD' into main");
+isa_ok ($ddez, 'EzDD');
 
+# this test would fail, cuz only new and import are aliased.
+# isa_ok ($ddez, 'Data::Dumper::EasyOO');
+
+is ($ddez->($AR), $ARGold[0][2], "obj built w EzDD->new works on arrayref");
+is ($ddez->($HR), $HRGold[0][2], "obj built w EzDD->new works on hashref");
 
 package Foo;
 use Data::Dumper::EasyOO (alias => Bar);

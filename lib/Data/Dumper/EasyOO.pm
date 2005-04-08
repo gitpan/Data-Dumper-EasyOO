@@ -3,10 +3,11 @@
 package Data::Dumper::EasyOO;
 use Data::Dumper();
 use Carp 'carp';
+use strict;
 
 use 5.005_03;
 use vars qw($VERSION);
-$VERSION = '0.05_01';
+$VERSION = '0.05_02';
 
 =head1 NAME
 
@@ -43,7 +44,8 @@ thereby drop the 'print' from all ezdump calls.
 
 
     use Data::Dumper::EasyOO (autoprint => 1);
-    ezdump ( guest_list => { Joe => 'beer', Betsy => 'wine' });
+    my $gl = { Joe => 'beer', Betsy => 'wine' });
+    ezdump ( guest_list => $gl);
 
 which prints:
 
@@ -85,10 +87,10 @@ OO style if you prefer.
 Continuing from 2nd synopsis example...
 
     $ezdump->Set(sortkeys=>1);
-    ezdump ( guest_list => { Joe => 'beer', Betsy => 'wine' });
+    ezdump ( guest_list => $gl );
     print "\n";
     $ezdump->Indent(1);
-    ezdump ( guest_list => { Joe => 'beer', Betsy => 'wine' });
+    ezdump ( guest_list => $gl );
 
 which prints:
 
@@ -141,7 +143,7 @@ sub import {
     # save EzDD client's preferences for use in new()
     my ($pkg, @args) = @_;
     my ($prop, $val, %args);
-    my (@aliases, @ezdds);
+    my ($alias, @aliases, @ezdds);
     my $caller = caller();
 
     # handle aliases, multiples allowed (feeping creaturism)
@@ -150,6 +152,7 @@ sub import {
 	($idx, $alias) = splice(@args, $idx, 2);
 	no strict 'refs';
 	*{$alias.'::new'} = \&{$pkg.'::new'};
+	*{$alias.'::import'} = \&{$pkg.'::import'};
 	push @aliases, $alias;
     }
 
@@ -179,12 +182,15 @@ sub import {
     # export ezdump() unconditionally
     # no warnings 'redefine';
     local $SIG{__WARN__} = sub {
-	carp "@_" unless $_[0] =~ /ezdump redefined/;
+	warn $@, @_ unless $_[0] =~ /ezdump redefined/;
     };
+    no strict 'refs';
     my $ezdump = $pkg->new(%args);
     *{$caller.'::ezdump'} = $ezdump; # export ezdump()
     ${$caller.'::ezdump'} = $ezdump; # export $ezdump = \&ezdump
 
+    return (1, \%args) if wantarray;
+    return (\%args) if defined wantarray;
     return;
 
 =for consideration
@@ -235,6 +241,8 @@ sub Set {
     $ezdd;
 }
 
+use vars '$AUTOLOAD';
+
 sub AUTOLOAD {
     my ($ezdd, $arg) = @_;
     (my $meth = $AUTOLOAD) =~ s/.*:://;
@@ -250,6 +258,11 @@ sub pp {
 }
 
 *dump = \&pp;
+
+sub _ez_ddo {
+    my ($ezdd) = @_;
+    return $ezdd->($magic);
+}
 
 my $_privatePrinter;	# visible only to new and closure object it makes
 
@@ -288,17 +301,14 @@ $_privatePrinter = sub {
     }
     if (@args == 1) {
 	# test for AUTOLOADs special access
-	return $ddo if defined $args[0] and $args[0] eq $magic;
+	return $ddo if defined $args[0] and $args[0] == $magic;
 	
 	# else Regular usage
 	$ddo->{todump} = \@args;
-	#goto PrintIt;
     }
-    # else
     elsif (@args % 2) {
 	# cant be a hash, must be array of data
 	$ddo->{todump} = \@args;
-	#goto PrintIt;
     }
     else {
 	# possible labelled usage, 
@@ -308,7 +318,6 @@ $_privatePrinter = sub {
 	if (grep {ref $_} values %rev) {
 	    # odd elements are refs, must print as array
 	    $ddo->{todump} = \@args;
-	    goto PrintIt;
 	}
 	else {
 	    my (@labels,@vals);
@@ -319,7 +328,6 @@ $_privatePrinter = sub {
 	    $ddo->{names}  = \@labels;
 	    $ddo->{todump} = \@vals;
 	}
-	#goto PrintIt;
     }
   PrintIt:
     # return dump-str unless void context
@@ -519,11 +527,8 @@ at BEGIN time is trashed at program INIT time.
 
 You can even create multiple objects at use-time.  EzDD treats the
 arguments as an order-dependent list, and initializes any specified
-objects with the settings seen thus far.
-
-In the synopsis example, $ezdd and $ez2 are both initialized, but $ez2
-gets a few more style-tweaks.  To better clarify, consider this
-example:
+objects with the settings seen thus far.  To better clarify, consider
+this example:
 
   use Data::Dumper::EasyOO 
     (
@@ -548,14 +553,25 @@ This is equivalent:
   }
 
 Each %style can supplement or override the previous ones.  %styleD is
-not used for any of the initialized objects; it is incorporated into
-the using package's default style, and is used in all new objects
-created at runtime.  
+not used for any of the initialized objects, but it is incorporated
+into the using package's default style, and is used in all new objects
+created at runtime.
 
 Each user package can set its own default style; you can use this, for
 example, to set a different sortkeys => \&pkg_filter for each.  With
 this, YourReport::Summary and YourReport::Details can dump the info
 appropriate for your needs.
+
+=head2 re-importing to change print-style defaults
+
+If you decide during runtime that you dont like your use-time
+defaults, just call import again to change them.  All newly built
+objects will inherit those new print-styles.
+
+This feature is experimental, may change in future, and is mostly
+accidental.  Let me know if you use it, or if you see another use-case
+that is more valuable.
+
 
 =head1 A FEATURE-FULL EXAMPLE
 
@@ -585,6 +601,8 @@ print-styles.
 
      # autoconstruct a 2nd printer object, using current print-styles
      init	=> \our $ez2,	# var must be undef b4 use
+
+     alias	=> Ez2,		# another top-level-name alias
      );
 
  $ezdd->(p1 => $person);	# print as '$p1 => ...'
@@ -598,6 +616,21 @@ print-styles.
 
  $foo->Set(%morestyle);		# change style at runtime
  $foo->($_) foreach @things;	# print many things
+
+
+=head1 Caveats, Todos, Tobe Considered
+
+Print-style defaults are stored in EzDD for each user package.  This
+does not permit aliases to have separate defaults, which could be
+useful.  This is fairly straightforward, and may be added in the
+future.
+
+Aliases could be treated like object 'init's, in that they could get
+defaults based upon the print-styles seen thus far in the use-time
+arguments.  The difficulty with this idea is that it changes the
+declarative flavor of aliases.  In the featureful example above, the
+EzDD alias appears before the various print-style settings, so they
+would not apply to it, but only to the 2nd alias, Ez2.
 
 
 =head1 SEE ALSO (its a crowded space, isnt it!)

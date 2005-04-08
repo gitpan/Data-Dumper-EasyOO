@@ -1,9 +1,24 @@
+0.05_02
+
+	Stripped filename from test in t/warns (failed on windows,
+	 apparently due to path separator).
+	Export 'import' along with 'new', so aliased reimports work too;
+	 tested by reimport.t reimport-alias.t
+	CPANTS'ers, please test so I can push out 0.05 soon.
+	
+0.05_01
+
+	Added ezdump(), and export both it and $ezdump (the object
+	 ezdump() uses) by default into callers pkg.
+	Simplified Synopsis, moved previous to FULL-FEATURED EXAMPLE.
+	Both are based upon more feedback from <markstos@cpan.org>
+
 0.04
 
 	Refactored new() to minimize closure size, and call a private
-	sub (anonymous subref held in a myvar) instead.
+	 sub (anonymous subref held in a myvar) instead.
 	Simplified t/autoprint a lot using Test::Output, and also
-	boosted test coverage by doing so. (Shawn Sorichetti, nice module!)
+	 boosted test coverage by doing so. (Shawn Sorichetti, nice module!)
 	pod & test tweaks, various other bits I cant remember.
 
 0.04_03

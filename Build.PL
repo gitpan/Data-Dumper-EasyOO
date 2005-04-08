@@ -1,18 +1,20 @@
 
 print<<EOIntro;
 
-To *thoroughly* test this module, I recommend the following modules:
+To more thoroughly test this module, I recommend the following modules:
   Test::Output - to test autoprint => 1, autoprint => 2
   Test::Warn   - to verify warnings on errant usages
 
 With them, you should get following results from `make testcover`
 
+
 ----------------------------------- ------ ------ ------ ------ ------ ------
 File                                  stmt branch   cond    sub   time  total
 ----------------------------------- ------ ------ ------ ------ ------ ------
-blib/lib/Data/Dumper/EasyOO.pm       100.0   92.3   80.0  100.0  100.0   97.6
-Total                                100.0   92.3   80.0  100.0  100.0   97.6
+blib/lib/Data/Dumper/EasyOO.pm       100.0   96.7  100.0  100.0  100.0   99.3
+Total                                100.0   96.7  100.0  100.0  100.0   99.3
 ----------------------------------- ------ ------ ------ ------ ------ ------
+
 
 Yes, Im pleased with myself :-)
 
