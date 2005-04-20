@@ -7,7 +7,7 @@ use strict;
 
 use 5.005_03;
 use vars qw($VERSION);
-$VERSION = '0.05_02';
+$VERSION = '0.05';
 
 =head1 NAME
 
@@ -182,7 +182,7 @@ sub import {
     # export ezdump() unconditionally
     # no warnings 'redefine';
     local $SIG{__WARN__} = sub {
-	warn $@, @_ unless $_[0] =~ /ezdump redefined/;
+	carp $@, @_ unless $_[0] =~ / redefined/;
     };
     no strict 'refs';
     my $ezdump = $pkg->new(%args);
@@ -238,7 +238,7 @@ sub Set {
 	}
 	else { carp "illegal method <$item>" }
     }
-    $ezdd;
+    return $ezdd;
 }
 
 use vars '$AUTOLOAD';
@@ -257,7 +257,19 @@ sub pp {
     $ezdd->(@data);
 }
 
-*dump = \&pp;
+# Im ambivalent about this BEGIN block.  Its only use is to suppress
+# redefined warnings issued when re-do{}'g the file, ie when purposely
+# avoiding use or require (see t/redefined.t).  A more normal
+# re-importing is already supressed in import(), by the same
+# (localized) handler.
+
+local $SIG{__WARN__};
+BEGIN {
+    $SIG{__WARN__} = sub {
+	carp $@, @_ unless $_[0] =~ / redefined/;
+    };
+    *dump = \&pp;	# causes warning if done outside begin block
+}
 
 sub _ez_ddo {
     my ($ezdd) = @_;
@@ -291,13 +303,15 @@ sub new {
     return $code;
 }
 
+$_privatePrinter = \&__DONT_TOUCH_THIS;
 
-$_privatePrinter = sub {
+sub __DONT_TOUCH_THIS {
     my ($ddo, @args) = @_;
 
     unless ($ddo->{_ezdd_noreset}) {
 	$ddo->Reset;	# clear seen
 	$ddo->Names([]);	# clear labels
+	$ddo->Values([]);	# clear data
     }
     if (@args == 1) {
 	# test for AUTOLOADs special access
@@ -320,13 +334,10 @@ $_privatePrinter = sub {
 	    $ddo->{todump} = \@args;
 	}
 	else {
-	    my (@labels,@vals);
 	    while (@args) {
-		push @labels, shift @args;
-		push @vals,   shift @args;
+		push @{$ddo->{names}}, shift @args;
+		push @{$ddo->{todump}}, shift @args;
 	    }
-	    $ddo->{names}  = \@labels;
-	    $ddo->{todump} = \@vals;
 	}
     }
   PrintIt:
@@ -417,7 +428,7 @@ you when you call the object.
     $ezdd->($foo);		# even shorter
 
 But this happens only when you want it to, not when you assign the
-results to something else.
+results to something else (or return it into your own print statement)
 
     $b4 = $ezdd->($foo);	# save rendering in var
     $foo->bar();		# alter printed obj
@@ -568,11 +579,6 @@ If you decide during runtime that you dont like your use-time
 defaults, just call import again to change them.  All newly built
 objects will inherit those new print-styles.
 
-This feature is experimental, may change in future, and is mostly
-accidental.  Let me know if you use it, or if you see another use-case
-that is more valuable.
-
-
 =head1 A FEATURE-FULL EXAMPLE
 
 This is a rather over-the-top usage.
@@ -617,6 +623,17 @@ print-styles.
  $foo->Set(%morestyle);		# change style at runtime
  $foo->($_) foreach @things;	# print many things
 
+=head1 Other conveniences
+
+=head2 dump() and pp()
+
+These are both object methods, and are aliases which provide a
+familiar invocation for users of Data::Dump.
+
+  # these are all the same
+  $ezdump->(\%INC);
+  $ezdump->pp(\%INC);
+  $ezdump->dump(\%INC);
 
 =head1 Caveats, Todos, Tobe Considered
 

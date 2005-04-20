@@ -1,3 +1,13 @@
+0.05	(Earth Day - help save the world!)
+
+	Added use strict (sometime during 0.05_*)
+	Broadened the SIG{__WARN__} /redefined/ filter.
+	Added t/pod-coverage.t (8 lines, whats all the fuss!)
+	changed private sub to __DONT_TOUCH_THIS package sub,
+	 so that Devel::Cover would see/cover it
+	test tweaks (99_internals.t, autoprint.t) to cover newly
+	 exposed coverage gaps
+
 0.05_02
 
 	Stripped filename from test in t/warns (failed on windows,

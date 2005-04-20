@@ -3,7 +3,7 @@
 # autoprint => 1 causes EzDD obj to print to STDOUT if called in void
 # context.  autoprint => 2 sends output STDERR
 
-use Test::More (tests => 22);
+use Test::More (tests => 23);
 
 pass "test void-context calls";
 use_ok ( Data::Dumper::EasyOO );
@@ -113,9 +113,9 @@ SKIP: {
 
     $io = IO::String->new(my $var);
     $ddez->Set(autoprint => $io);
-    $ddez->(foo => 'bar to stdout');
-
-    is ($var, "\$foo = 'bar to stdout';\n", "autoprint to IO::string storage");
+    $ddez->(foo => 'bar to iostring obj');
+    is ($var, "\$foo = 'bar to iostring obj';\n",
+	"autoprint to IO::string storage");
 }
 
 SKIP: {
@@ -127,9 +127,9 @@ SKIP: {
     warn $@ if $@;
 
     $ddez->Set(autoprint => $io);
-    $ddez->(foo => 'bar to stdout');
-    is (length $var, 24, "length ok");
-    #print "wrote: $var";
+    $ddez->(foo => 'bar to opened scalar-ref');
+    is ($var, "\$foo = 'bar to opened scalar-ref';\n",
+	"autoprint to opened scalar ref");
 }
 
 SKIP: {
@@ -158,6 +158,18 @@ SKIP: {
     warning_is ( sub { $ddez->(foo=>'bar') },
 		 'called in void context, without autoprint set',
 		 "expected warning after autoprint reset to undef");
+
+    {	# test package, which cannot print
+	package Foo;
+	sub new { bless {}, shift}
+    }
+    
+    $ddez->Set(autoprint => new Foo);
+    local $SIG{__WARN__} = sub {}; # silence the warning to the terminal
+    $ddez->(\%INC);
+    warning_like ( sub { $ddez->(foo=>'bar') },
+		   qr/illegal autoprint value: Foo=HASH/,
+		   "expected warning when autoprinting to un-capable object");
 }
 
 
