@@ -1,3 +1,7 @@
+0.0502	4/22/05
+
+	remove some private pod that went into README on cpan.org
+
 0.0501	4/22/05
 
 	Crap.  Missed incrementing a skip-count for an added test.

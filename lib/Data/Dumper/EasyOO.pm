@@ -7,7 +7,7 @@ use strict;
 
 use 5.005_03;
 use vars qw($VERSION);
-$VERSION = '0.0501';
+$VERSION = '0.0502';
 
 =head1 NAME
 
@@ -196,26 +196,6 @@ sub import {
     return (1, \%args) if wantarray;
     return (\%args) if defined wantarray;
     return;
-
-=for consideration
-
-    # rest is EXPERIMENTAL, and incomplete, and broken
-    # Im not sure I like it anyway, even if it did work
-
-    if (@aliases) { # && not @ezdds) {
-	# create default objects into the aliases
-
-	foreach my $alias (@aliases) {
-	    my $x = $pkg->new();
-
-	    # create the alias in caller pkg
-	    ${$caller.'::'.$alias} = $x;
-
-	    # this breaks aliasPkg->new() calls
-	    # *{$caller.'::'.$alias} = \&$x;
-	}
-    }
-=cut
 }
 
 sub Set {
@@ -413,9 +393,9 @@ gives you an unsuprising way to get what you want without fuss.
 EzDD recognizes that the only reason you'd use it is to dump your
 data, so it gives you a shorthand to do so.
 
-  print $ezdd->dump($foo);	# long way
-  print $ezdd->pp($foo);	# still a long way
-  print $ezdd->($foo);		# identical shorthand
+  print $ezdd->dump($foo);	# 'long' way
+  print $ezdd->pp($foo);	# shorter way
+  print $ezdd->($foo);		# look Ma, no function name
 
 It helps to think of an EzDD object as analogous to a printer;
 sometimes you want to change the paper-tray, or the landscape/portrait
