@@ -13,6 +13,7 @@ t/basic.t
 t/chains.t
 t/emulate.t
 t/ezdump.t
+t/ezdump-strict.t
 t/honorLocals.t
 t/import-returns.t
 t/indent-terse.t

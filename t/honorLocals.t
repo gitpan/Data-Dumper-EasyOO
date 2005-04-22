@@ -12,7 +12,9 @@ choice has already been made (by DD).
 
 
 use Test::More (tests => 7);
+use vars qw($AR  $HR  @ARGold  @HRGold  @Arrays  @ArraysGold  @LArraysGold);
 require 't/Testdata.pm';
+
 
 use_ok (Data::Dumper::EasyOO);
 

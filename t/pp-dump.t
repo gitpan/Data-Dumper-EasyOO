@@ -1,7 +1,8 @@
 #!perl
 # test pp()
-
+use strict;
 use Test::More tests => 8;
+use vars qw($AR  $HR  @ARGold  @HRGold  @Arrays  @ArraysGold  @LArraysGold);
 require 't/Testdata.pm';
 
 use Data::Dumper::EasyOO;

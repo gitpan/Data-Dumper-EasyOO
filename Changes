@@ -1,34 +1,40 @@
+0.0501	4/22/05
+
+	Crap.  Missed incrementing a skip-count for an added test.
+	  Caught by CPANTSer, Max Maischein.
+	added use strict to all the tests, and pod IMPORTS section.
+
 0.05	(Earth Day - help save the world!)
 
 	Added use strict (sometime during 0.05_*)
 	Broadened the SIG{__WARN__} /redefined/ filter.
 	Added t/pod-coverage.t (8 lines, whats all the fuss!)
 	changed private sub to __DONT_TOUCH_THIS package sub,
-	 so that Devel::Cover would see/cover it
+	  so that Devel::Cover would see/cover it
 	test tweaks (99_internals.t, autoprint.t) to cover newly
-	 exposed coverage gaps
+	  exposed coverage gaps
 
 0.05_02
 
 	Stripped filename from test in t/warns (failed on windows,
-	 apparently due to path separator).
+	  apparently due to path separator).
 	Export 'import' along with 'new', so aliased reimports work too;
-	 tested by reimport.t reimport-alias.t
+	  tested by reimport.t reimport-alias.t
 	CPANTS'ers, please test so I can push out 0.05 soon.
 	
 0.05_01
 
 	Added ezdump(), and export both it and $ezdump (the object
-	 ezdump() uses) by default into callers pkg.
+	  ezdump() uses) by default into callers pkg.
 	Simplified Synopsis, moved previous to FULL-FEATURED EXAMPLE.
 	Both are based upon more feedback from <markstos@cpan.org>
 
 0.04
 
 	Refactored new() to minimize closure size, and call a private
-	 sub (anonymous subref held in a myvar) instead.
+	  sub (anonymous subref held in a myvar) instead.
 	Simplified t/autoprint a lot using Test::Output, and also
-	 boosted test coverage by doing so. (Shawn Sorichetti, nice module!)
+	  boosted test coverage by doing so. (Shawn Sorichetti, nice module!)
 	pod & test tweaks, various other bits I cant remember.
 
 0.04_03

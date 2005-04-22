@@ -1,4 +1,5 @@
 #!perl
+use strict;
 
 # various tests to get better testcover-age
 # some of these tests dont reflect real use-cases
@@ -6,15 +7,15 @@
 use Test::More (tests => 7);
 #require "t/Testdata.pm";
 
-use_ok (Data::Dumper::EasyOO);
+use_ok qw(Data::Dumper::EasyOO);
 
 my $ddez = Data::Dumper::EasyOO->new();
-isa_ok ($ddez, Data::Dumper::EasyOO, "object");
+isa_ok ($ddez, 'Data::Dumper::EasyOO', "object");
 
 
 # test inner Data::Dumper object handle
 my $ddo = $ddez->_ez_ddo();
-isa_ok ($ddo, Data::Dumper, "inner object");
+isa_ok ($ddo, 'Data::Dumper', "inner object");
 
 # dont try this at home.
 # its not a test, just a Devel::Cover exersize

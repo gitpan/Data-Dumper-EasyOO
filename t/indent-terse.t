@@ -1,10 +1,12 @@
 #!perl
 # creates 1 EzDD, and alters it repeatedly, using both Set and AUTOLOAD
+use strict;
 
 use Test::More (tests => 98);
+use vars qw($AR  $HR  @ARGold  @HRGold  @Arrays  @ArraysGold  @LArraysGold);
 require 't/Testdata.pm';
 
-use_ok (Data::Dumper::EasyOO);
+use_ok qw(Data::Dumper::EasyOO);
 
 my $ddez = Data::Dumper::EasyOO->new();
 isa_ok ($ddez, 'Data::Dumper::EasyOO', "good DDEz object");

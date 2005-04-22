@@ -1,5 +1,5 @@
 #!perl
-
+use strict;
 use Test::More (tests => 13);
 
 =head1 test Abstract
@@ -25,7 +25,8 @@ $ddez = EzDD->new();
 is ($ddez->($ar), $argold[0][2], "main default on arrayref");
 is ($ddez->($hr), $hrgold[0][2], "main default on hashref");
 
-print ezdump([EzDD->import(indent=>1)]);
+# called for side effect only.
+(undef) = ezdump([EzDD->import(indent=>1)]);
 $ez2 = EzDD->new();
 
 is ($ez2->($ar), $argold[0][1], "reimport changes defaults of new obj");
@@ -35,7 +36,7 @@ is ($ddez->($ar), $argold[0][2], "leaves orig obj alone");
 is ($ddez->($hr), $hrgold[0][2], "leaves orig obj alone");
 
 
-$ez3 = Data::Dumper::EasyOO->new();
+my $ez3 = Data::Dumper::EasyOO->new();
 is ($ez3->($ar), $argold[0][1], "but changes defaults of unaliased name");
 
 

@@ -485,6 +485,32 @@ Other conveniences
       $ezdump->pp(\%INC);
       $ezdump->dump(\%INC);
 
+IMPORTS
+    This module pollutes the users namespace with 2 symbols: $ezdump and
+    &ezdump. In the context of maximum easyness, this is construed to be a
+    feature.
+
+BUGS
+    If you 'use strict' and this module together, you may get weird errors;
+    similar to the following. The last ones in particular are odd, since the
+    code has NO variable named $class.
+
+     Variable "$ezdump" is not imported at t/ezdump-strict.t line 18.
+      at t/ezdump-strict.t line 18
+            (Did you mean &class instead?)
+      at t/ezdump-strict.t line 18
+     Variable "$ezdump" is not imported at t/ezdump-strict.t line 18.
+      at t/ezdump-strict.t line 18
+            (Did you mean &ezdump instead?)
+      at t/ezdump-strict.t line 18
+     Global symbol "$class" requires explicit package name at t/ezdump-strict.t line 18.
+     Global symbol "$ezdump" requires explicit package name at t/ezdump-strict.t line 18.
+
+    I dont know the root cause of this, but the solution is simple;
+    predeclare the $ezdump variable, as is done in t/ezdump-strict.t (the
+    file proves that explicit importing of those default imports doesnt fix
+    the oddity shown above).
+
 Caveats, Todos, Tobe Considered
     Print-style defaults are stored in EzDD for each user package. This does
     not permit aliases to have separate defaults, which could be useful.

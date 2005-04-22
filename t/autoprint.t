@@ -2,11 +2,11 @@
 
 # autoprint => 1 causes EzDD obj to print to STDOUT if called in void
 # context.  autoprint => 2 sends output STDERR
-
+use strict;
 use Test::More (tests => 23);
 
 pass "test void-context calls";
-use_ok ( Data::Dumper::EasyOO );
+use_ok qw( Data::Dumper::EasyOO );
 
 my $ddez = Data::Dumper::EasyOO->new(indent=>1);
 isa_ok ($ddez, 'Data::Dumper::EasyOO', "new() retval");
@@ -111,7 +111,7 @@ SKIP: {
     skip "these tests need IO::String", 2 if $@;
     pass "testing autoprint => IO using IO::string";
 
-    $io = IO::String->new(my $var);
+    my $io = IO::String->new(my $var);
     $ddez->Set(autoprint => $io);
     $ddez->(foo => 'bar to iostring obj');
     is ($var, "\$foo = 'bar to iostring obj';\n",
@@ -134,7 +134,7 @@ SKIP: {
 
 SKIP: {
     eval "use Test::Warn";
-    skip("these tests need Test::Warn", 4) if $@;
+    skip("these tests need Test::Warn", 5) if $@;
 
     pass("testing autoprint invocation w.o setup");
 

@@ -1,5 +1,5 @@
 #!perl
-
+use strict;
 use Test::More (tests => 11);
 
 =head1 test Abstract
@@ -29,7 +29,7 @@ is ($ddez->($AR), $ARGold[0][2], "obj built w EzDD->new works on arrayref");
 is ($ddez->($HR), $HRGold[0][2], "obj built w EzDD->new works on hashref");
 
 package Foo;
-use Data::Dumper::EasyOO (alias => Bar);
+use Data::Dumper::EasyOO (alias => 'Bar');
 *is = \&Test::More::is;
 
 $ddez = Bar->new(indent=>1);
@@ -61,7 +61,7 @@ print $@;
 
 package Late;
 use Data::Dumper::EasyOO;
-import Data::Dumper::EasyOO (alias => ImportedAlias);
+import Data::Dumper::EasyOO (alias => 'ImportedAlias');
 *is = \&Test::More::is;
 
 $ddez = ImportedAlias->new(indent=>1);

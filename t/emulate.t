@@ -1,11 +1,13 @@
 #!perl
-
 # test emulation of DD methods that should resolve to Set
 
+use strict;
 use Test::More (tests => 8);
+use vars qw($AR  $HR  @ARGold  @HRGold  @Arrays  @ArraysGold  @LArraysGold);
+use vars qw(@arr);
 require 't/Testdata.pm';
 
-use_ok ( Data::Dumper::EasyOO );
+use_ok qw( Data::Dumper::EasyOO );
 
 my $ddez = Data::Dumper::EasyOO->new(indent=>1);
 isa_ok ($ddez, 'Data::Dumper::EasyOO', "new() retval");

@@ -1,6 +1,6 @@
 #!perl
 # test use-time print-style control
-
+use strict;
 use vars qw($ezfoo $ezbar);
 
 package Foo;
@@ -13,6 +13,7 @@ $main::ezbar = Data::Dumper::EasyOO->new;
 
 package main;
 use Test::More tests => 5;
+use vars qw($AR  $HR  @ARGold  @HRGold  @Arrays  @ArraysGold  @LArraysGold);
 require 't/Testdata.pm';
 
 pass "dump with default indent";

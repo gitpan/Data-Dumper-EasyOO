@@ -1,5 +1,5 @@
 #!perl
-
+use strict;
 use Test::More (tests => 54);
 use vars qw( $AR $HR @ARGold @HRGold @ArraysGold @LArraysGold @Arrays);
 require "t/TestLabelled.pm";

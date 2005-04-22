@@ -1,10 +1,11 @@
 #!perl
 # test that 2 DDEz objects are isolated wrt print options
-
+use strict;
 use Test::More (tests => 135);
+use vars qw($AR  $HR  @ARGold  @HRGold  @Arrays  @ArraysGold  @LArraysGold);
 require 't/Testdata.pm';
 
-use_ok (Data::Dumper::EasyOO);
+use_ok qw(Data::Dumper::EasyOO);
 
 my $ez1 = Data::Dumper::EasyOO->new();
 my $ez2 = Data::Dumper::EasyOO->new(indent=>0);

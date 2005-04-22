@@ -1,5 +1,5 @@
 #!perl
-
+use strict;
 use Test::More;
 eval "use Test::Warn";
 plan skip_all =>
@@ -11,7 +11,7 @@ plan tests => 10;
 sub warning_is (&$;$);		# prototypes needed cuz eval delays
 sub warning_like (&$;$);	# the protos provided by pkg
 
-use_ok (Data::Dumper::EasyOO);
+use_ok qw(Data::Dumper::EasyOO);
 
 my $ddez = Data::Dumper::EasyOO->new();
 isa_ok ($ddez, 'Data::Dumper::EasyOO', "good object");

@@ -1,11 +1,12 @@
 #!perl -w
 
 use strict;
-use Test::More (tests => 8);
+use Test::More (tests => 7);
 
 use vars qw($ezdump);
-#use Data::Dumper::EasyOO;
-use_ok qw(Data::Dumper::EasyOO);
+
+# you can explicitly 'import' the default imports, tho theres no reason to.
+use Data::Dumper::EasyOO qw( $ezdump &ezdump ezdump );
 
 is(ezdump([1..3]), <<'EORef', "ezdump works w indent=2 (default)");
 $VAR1 = [

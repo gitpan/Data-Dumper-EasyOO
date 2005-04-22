@@ -1,5 +1,5 @@
 #!perl
-
+use strict;
 use Test::More; # (tests => 3);
 use Benchmark();
 
@@ -8,18 +8,18 @@ plan skip_all => "need File::Spec and File::Temp" if $@;
 plan skip_all => "to run speed tests, pass a true arg" unless @ARGV;
 plan tests => 3;
 
-use vars qw($AR $HR @Arrays);
+use vars qw($AR $HR @Arrays $data);
 require "t/TestLabelled.pm";
 
 use Data::Dumper;
 $Data::Dumper::Indent = $Data::Dumper::Indent = 1; # 2x - supress warnings
 
-use_ok (Data::Dumper::EasyOO);
+use_ok qw(Data::Dumper::EasyOO);
 
 # open a couple different handles to collect output
 my ($tmp) = tempfile("benchXXXX", SUFFIX => '.dat'); #, UNLINK => 1);
-my $devnull = File::Spec->devnull;
-open ($devnull, ">$devnull") or die "cant open $devnull: $!";
+my ($devnullnm) = File::Spec->devnull();
+open (my $devnull, ">$devnullnm") or die "cant open $devnullnm: $!";
 
 # build objects to benchmark against each other
 my $ddo  = Data::Dumper->new([]);
@@ -108,13 +108,13 @@ sub report {
     if (ref $rows eq 'ARRAY') {
 	# 5.8.2 situation - output-able table
 	my $format = "%12s " x (@$rows + 1);
-	for $r (@$rows) {
+	for my $r (@$rows) {
 	    diag sprintf($format, @$r);
 	}
     }
     elsif (ref $rows eq 'HASH') {
 	# 5.6.2 situation: a labelled set of Benchmark results
-	for $r (keys %$rows) {
+	for my $r (keys %$rows) {
 	    my ($usr,$runs) = @{$rows->{$r}}[1,5];
 	    diag sprintf("%6s %5d/%4.2f = %8.3f", $r, $runs, $usr, $runs/$usr);
 	}

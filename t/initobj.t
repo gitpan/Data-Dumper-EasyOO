@@ -1,6 +1,7 @@
 #!perl
-
+use strict;
 use Test::More tests => 16;
+use vars qw($AR $HR @ARGold @HRGold);
 require 't/Testdata.pm';
 # share imported pkgs via myvars to other pkgs in file
 my ($ar,$hr) = ($AR, $HR);
@@ -53,7 +54,7 @@ SKIP: {
 
     $odd = undef;
     eval "$code";
-    isa_ok ($odd, Data::Dumper::EasyOO, 're-construct after undeffing var.');
+    isa_ok ($odd, 'Data::Dumper::EasyOO', 're-construct after undeffing var.');
 
     # test void-context call on obj w/o autoprint
     $odd = Data::Dumper::EasyOO->new();

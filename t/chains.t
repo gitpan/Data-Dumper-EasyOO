@@ -1,13 +1,14 @@
 #!perl
 # creates 1 EzDD, and alters it repeatedly, using both Set and AUTOLOAD
-
+use strict;
 use Test::More;
 if ($] >= 5.006) { plan tests => 330 }
 else		 { plan tests => 180 }
 
+use vars qw($AR  $HR  @ARGold  @HRGold  @Arrays  @ArraysGold  @LArraysGold);
 require 't/Testdata.pm';
 
-use_ok (Data::Dumper::EasyOO);
+use_ok qw(Data::Dumper::EasyOO);
 
 my $ddez = Data::Dumper::EasyOO->new();
 isa_ok ($ddez, 'Data::Dumper::EasyOO', "good DDEz object");
@@ -27,8 +28,8 @@ for my $t (0..1) {
 
 # methods: Values, Reset  cause failures in tests !
 
-@methods = qw( Indent Terse Seen Names Pad Varname Useqq 
-	       Purity Freezer Toaster Deepcopy Bless );
+my @methods = qw( Indent Terse Seen Names Pad Varname Useqq 
+		  Purity Freezer Toaster Deepcopy Bless );
 
 push @methods, qw( Pair Maxdepth Useperl Sortkeys Deparse )
     if $] >= 5.006002;

@@ -7,7 +7,7 @@ use strict;
 
 use 5.005_03;
 use vars qw($VERSION);
-$VERSION = '0.05';
+$VERSION = '0.0501';
 
 =head1 NAME
 
@@ -155,6 +155,10 @@ sub import {
 	*{$alias.'::import'} = \&{$pkg.'::import'};
 	push @aliases, $alias;
     }
+    # quietly accept 'imports' of things we export anyway
+    foreach my $idx (grep {$args[$_] =~ /[\$\&]?ezdump$/} reverse 0..$#args) {
+	splice(@args, $idx, 1);
+    }
 
     while ($prop = shift(@args)) {
 	$val = shift(@args);
@@ -186,8 +190,8 @@ sub import {
     };
     no strict 'refs';
     my $ezdump = $pkg->new(%args);
-    *{$caller.'::ezdump'} = $ezdump; # export ezdump()
     ${$caller.'::ezdump'} = $ezdump; # export $ezdump = \&ezdump
+    *{$caller.'::ezdump'} = $ezdump; # export ezdump()
 
     return (1, \%args) if wantarray;
     return (\%args) if defined wantarray;
@@ -634,6 +638,34 @@ familiar invocation for users of Data::Dump.
   $ezdump->(\%INC);
   $ezdump->pp(\%INC);
   $ezdump->dump(\%INC);
+
+=head1 IMPORTS
+
+This module pollutes the users namespace with 2 symbols: $ezdump and
+&ezdump.  In the context of maximum easyness, this is construed to be
+a feature.
+
+=head1 BUGS
+
+If you 'use strict' and this module together, you may get weird
+errors; similar to the following.  The last ones in particular are
+odd, since the code has NO variable named $class.
+
+ Variable "$ezdump" is not imported at t/ezdump-strict.t line 18.
+  at t/ezdump-strict.t line 18
+        (Did you mean &class instead?)
+  at t/ezdump-strict.t line 18
+ Variable "$ezdump" is not imported at t/ezdump-strict.t line 18.
+  at t/ezdump-strict.t line 18
+        (Did you mean &ezdump instead?)
+  at t/ezdump-strict.t line 18
+ Global symbol "$class" requires explicit package name at t/ezdump-strict.t line 18.
+ Global symbol "$ezdump" requires explicit package name at t/ezdump-strict.t line 18.
+
+I dont know the root cause of this, but the solution is simple;
+predeclare the $ezdump variable, as is done in t/ezdump-strict.t (the
+file proves that explicit importing of those default imports doesnt
+fix the oddity shown above).
 
 =head1 Caveats, Todos, Tobe Considered
 

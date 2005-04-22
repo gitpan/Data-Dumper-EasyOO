@@ -1,5 +1,5 @@
 #!perl
-
+use strict;
 use Test::More (tests => 5);
 
 =head1 test Abstract

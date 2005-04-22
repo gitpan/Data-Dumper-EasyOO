@@ -1,5 +1,5 @@
 #-*-perl-*-
-
+use strict;
 use Test::More tests => 1;
 eval "use Pod::Coverage";
 plan skip_all => "Pod::Coverage not installed here: $@" if $@;
