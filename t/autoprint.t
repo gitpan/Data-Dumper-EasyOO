@@ -3,7 +3,7 @@
 # autoprint => 1 causes EzDD obj to print to STDOUT if called in void
 # context.  autoprint => 2 sends output STDERR
 use strict;
-use Test::More (tests => 23);
+use Test::More (tests => 24);
 
 pass "test void-context calls";
 use_ok qw( Data::Dumper::EasyOO );
@@ -32,7 +32,11 @@ sub write2it {
 
 SKIP: {
     eval "use Test::Output";
-    skip "need Test::Output to test autoprint to stdout,stderr", 8 if $@;
+    skip "need Test::Output to test autoprint to stdout,stderr", 9 if $@;
+
+    stdout_is(sub{write2it(0, 1, 'foo','to stdout')},
+	      '',
+	      "stdout is empty, as expected");
 
     stdout_is(sub{write2it(1, 1, 'foo','to stdout')},
 	      qq{\$foo = 'to stdout';\n},
@@ -139,9 +143,10 @@ SKIP: {
     pass("testing autoprint invocation w.o setup");
 
     my $ddez = Data::Dumper::EasyOO->new(indent=>1);
-    warning_is ( sub { $ddez->(foo=>'bar') },
-		 'called in void context, without autoprint set',
-		 "expected warning b4 setup");
+    # warning_like is more relaxed vs carp vs warn
+    warning_like ( sub { $ddez->(foo=>'bar') },
+		   qr/called in void context, without autoprint defined/,
+		   "expected warning b4 setup");
 
     open (my $fh, ">out.autoprint") or die "cant open out.autoprint: $!";
     $ddez->Set(autoprint => $fh);
@@ -155,9 +160,9 @@ SKIP: {
 	"out.autoprint has expected content");
 
     $ddez->Set(autoprint => undef);
-    warning_is ( sub { $ddez->(foo=>'bar') },
-		 'called in void context, without autoprint set',
-		 "expected warning after autoprint reset to undef");
+    warning_like ( sub { $ddez->(foo=>'bar') },
+		   qr/called in void context, without autoprint defined/,
+		   "expected warning after autoprint reset to undef");
 
     {	# test package, which cannot print
 	package Foo;

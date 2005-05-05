@@ -1,6 +1,11 @@
+0.0503	5/05/05
+
+	supress carping when autoprint => 0 given explicitly,
+	  improving its use for dumping debug output.
+
 0.0502	4/22/05
 
-	remove some private pod that went into README on cpan.org
+	remove some =for private pod that went into README on cpan.org
 
 0.0501	4/22/05
 

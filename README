@@ -146,6 +146,16 @@ FEATURES
         # now dump before and after
         print "before: $b4, after: ", $ezdd->($foo);
 
+  not Dumping when you dont want to
+    For laziness with greater impunity, ezdump() and friends will carp if
+    you call them without printing (ie call them in void context). But if
+    thats really what you want to do, set autoprint => 0 at use-time, and
+    your calls will do nothing quietly.
+
+    Then when you want to enable dumping, perhaps with a cmd-line option,
+    you can do so once per object, and they are all enabled. With this, you
+    can declutter your dumping calls.
+
   setting print styles (on existing objects)
     You can set an object's print-style by imitating the way you'd do it
     with object oriented DD. All of DDs style-changing methods are emulated
@@ -334,6 +344,21 @@ IMPORTS
     &ezdump. In the context of maximum easyness, this is construed to be a
     feature.
 
+Caveats, Todos, Tobe Considered
+    The layering of defaults takes some getting used to. However, the
+    complexity is not a bug, its a feature.
+
+    Print-style defaults are stored in EzDD for each user package. This does
+    not permit aliases to have separate defaults, which could be useful.
+    This is fairly straightforward, and may be added in the future.
+
+    Aliases could be treated like object 'init's, in that they could get
+    defaults based upon the print-styles seen thus far in the use-time
+    arguments. The difficulty with this idea is that it changes the
+    declarative flavor of aliases. In the featureful example above, the EzDD
+    alias appears before the various print-style settings, so they would not
+    apply to it, but only to the 2nd alias, Ez2.
+
 BUGS
     If you 'use strict' and this module together, you may get weird errors;
     similar to the following. The last ones in particular are odd, since the
@@ -354,18 +379,6 @@ BUGS
     predeclare the $ezdump variable, as is done in t/ezdump-strict.t (the
     file proves that explicit importing of those default imports doesnt fix
     the oddity shown above).
-
-Caveats, Todos, Tobe Considered
-    Print-style defaults are stored in EzDD for each user package. This does
-    not permit aliases to have separate defaults, which could be useful.
-    This is fairly straightforward, and may be added in the future.
-
-    Aliases could be treated like object 'init's, in that they could get
-    defaults based upon the print-styles seen thus far in the use-time
-    arguments. The difficulty with this idea is that it changes the
-    declarative flavor of aliases. In the featureful example above, the EzDD
-    alias appears before the various print-style settings, so they would not
-    apply to it, but only to the 2nd alias, Ez2.
 
 SEE ALSO (its a crowded space, isnt it!)
      L<Data::Dumper>                the mother of them all

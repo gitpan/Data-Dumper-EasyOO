@@ -7,7 +7,7 @@ use strict;
 
 use 5.005_03;
 use vars qw($VERSION);
-$VERSION = '0.0502';
+$VERSION = '0.0503';
 
 =head1 NAME
 
@@ -325,15 +325,17 @@ sub __DONT_TOUCH_THIS {
 	}
     }
   PrintIt:
-    # return dump-str unless void context
+    # return dump-str unless *void* context
     return $ddo->Dump() if defined wantarray;
     
-    my $auto = (defined $ddo->{autoprint}) ? $ddo->{autoprint} : 0;
-    
-    unless ($auto) {
-	carp "called in void context, without autoprint set";
+    unless (defined $ddo->{autoprint}) {
+	carp "called in void context, without autoprint defined\n";
 	return;
     }
+    my $auto = $ddo->{autoprint};
+    # do nothing if autoprint is 0
+    return unless $auto;
+    
     # autoprint to STDOUT, STDERR, or HANDLE (IO or GLOB)
     
     if (ref $auto and (ref $auto eq 'GLOB' or $auto->can("print"))) {
@@ -420,6 +422,16 @@ results to something else (or return it into your own print statement)
     # now dump before and after
     print "before: $b4, after: ", $ezdd->($foo);
 
+=head2 not Dumping when you dont want to
+
+For laziness with greater impunity, ezdump() and friends will carp if
+you call them without printing (ie call them in void context).  But if
+thats really what you want to do, set autoprint => 0 at use-time, and
+your calls will do nothing quietly.
+
+Then when you want to enable dumping, perhaps with a cmd-line option,
+you can do so once per object, and they are all enabled.  With this,
+you can declutter your dumping calls.
 
 =head2 setting print styles (on existing objects)
 
@@ -625,6 +637,23 @@ This module pollutes the users namespace with 2 symbols: $ezdump and
 &ezdump.  In the context of maximum easyness, this is construed to be
 a feature.
 
+=head1 Caveats, Todos, Tobe Considered
+
+The layering of defaults takes some getting used to.  However, the
+complexity is not a bug, its a feature.
+
+Print-style defaults are stored in EzDD for each user package.  This
+does not permit aliases to have separate defaults, which could be
+useful.  This is fairly straightforward, and may be added in the
+future.
+
+Aliases could be treated like object 'init's, in that they could get
+defaults based upon the print-styles seen thus far in the use-time
+arguments.  The difficulty with this idea is that it changes the
+declarative flavor of aliases.  In the featureful example above, the
+EzDD alias appears before the various print-style settings, so they
+would not apply to it, but only to the 2nd alias, Ez2.
+
 =head1 BUGS
 
 If you 'use strict' and this module together, you may get weird
@@ -646,21 +675,6 @@ I dont know the root cause of this, but the solution is simple;
 predeclare the $ezdump variable, as is done in t/ezdump-strict.t (the
 file proves that explicit importing of those default imports doesnt
 fix the oddity shown above).
-
-=head1 Caveats, Todos, Tobe Considered
-
-Print-style defaults are stored in EzDD for each user package.  This
-does not permit aliases to have separate defaults, which could be
-useful.  This is fairly straightforward, and may be added in the
-future.
-
-Aliases could be treated like object 'init's, in that they could get
-defaults based upon the print-styles seen thus far in the use-time
-arguments.  The difficulty with this idea is that it changes the
-declarative flavor of aliases.  In the featureful example above, the
-EzDD alias appears before the various print-style settings, so they
-would not apply to it, but only to the 2nd alias, Ez2.
-
 
 =head1 SEE ALSO (its a crowded space, isnt it!)
 

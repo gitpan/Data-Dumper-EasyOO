@@ -58,8 +58,9 @@ SKIP: {
 
     # test void-context call on obj w/o autoprint
     $odd = Data::Dumper::EasyOO->new();
+    $odd->Set(autoprint => undef);
     warning_like( sub { $odd->(\%INC) },
-		  qr/called in void context, without autoprint set /,
+		  qr/called in void context, without autoprint defined/,
 		  "carps on void context call to obj w/o autoprint on");
 }
 
